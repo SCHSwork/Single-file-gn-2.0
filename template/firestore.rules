@@ -1,0 +1,130 @@
+rules_version = '2';
+// Paste this whole file into Firebase console → Firestore Database → Rules → Publish.
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    // Cloud saves: only the owning account can read or write them.
+    match /saves/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Ratings + broken reports, split across shard docs s0..s15:
+    //   { "z<gameId>": { v: { <uid>: 1 | -1 }, r: { <uid>: timestamp } }, last: { z, u } }
+    // Everyone can read the totals. A signed-in user may only add, change or
+    // remove their OWN vote/report, for one game per write.
+    match /gameStats/{shard} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && shard.matches('s([0-9]|1[0-5])')
+        && ((validStatsWrite() && !isBanned()) || isAdmin());
+    }
+
+    // Game submissions ("Submit a game"). A signed-in player can send one and
+    // read or delete their own. Admins (a document admins/<uid>, created only in
+    // the Firebase console) can read all of them and change status/note.
+    match /submissions/{id} {
+      allow create: if request.auth != null && !isBanned() && validSubmission(request.resource.data);
+      allow read: if request.auth != null && (resource.data.uid == request.auth.uid || isAdmin());
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'note'])
+        && request.resource.data.status in ['pending', 'approved', 'added', 'rejected']
+        && (!('note' in request.resource.data) || (request.resource.data.note is string && request.resource.data.note.size() <= 200));
+      allow delete: if request.auth != null && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+    // Game admins. The first one is added in the Firebase console; after that,
+    // admins can add or remove others (but not remove themselves).
+    match /admins/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['name', 'addedBy', 'addedAt'])
+        && shortText(request.resource.data.name, 40) && shortText(request.resource.data.addedBy, 40)
+        && request.resource.data.addedAt == request.time;
+      allow delete: if isAdmin() && request.auth.uid != uid;
+    }
+
+    // Suspended accounts: can still play and keep cloud saves, but can't
+    // rate, report or submit. Only admins can add or remove these.
+    match /bans/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow create, update: if isAdmin() && request.auth.uid != uid
+        && request.resource.data.keys().hasOnly(['name', 'reason', 'by', 'at'])
+        && shortText(request.resource.data.name, 40) && shortText(request.resource.data.reason, 200)
+        && shortText(request.resource.data.by, 40) && request.resource.data.at == request.time;
+      allow delete: if isAdmin();
+    }
+
+    // Small public-to-admins profile so admins can find accounts:
+    // username (must match the sign-in name), join date, last visit.
+    match /profiles/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['username', 'createdAt', 'lastSeen'])
+        && request.resource.data.username == request.auth.token.email.split('@')[0]
+        && shortText(request.resource.data.createdAt, 40)
+        && request.resource.data.lastSeen == request.time;
+      allow delete: if request.auth != null && (request.auth.uid == uid || isAdmin());
+    }
+
+    // "People online now": each open tab writes { t: server time, s: site } to
+    // presence/<random id> every couple of minutes. No account or personal
+    // info; anyone can read it so the site and status page can count it.
+    // Optional u: { "<YYYYMMDD>": { r, w } } is that browser's Firebase read and
+    // write count for today, added up by the site to estimate daily usage.
+    match /presence/{id} {
+      allow read: if true;
+      allow create, update: if id.matches('[A-Za-z0-9]{20}')
+        && request.resource.data.keys().hasOnly(['t', 's', 'u'])
+        && request.resource.data.t == request.time
+        && request.resource.data.s in ['gn2', 'light']
+        && (!('u' in request.resource.data) || validUsage(request.resource.data.u));
+    }
+    function validUsage(u) {
+      return u is map && u.size() == 1
+        && u.keys()[0].matches('20[0-9]{6}')
+        && u.values()[0] is map
+        && u.values()[0].keys().hasOnly(['r', 'w'])
+        && u.values()[0].r is int && u.values()[0].r >= 0 && u.values()[0].r <= 100000
+        && u.values()[0].w is int && u.values()[0].w >= 0 && u.values()[0].w <= 100000;
+    }
+
+    function isBanned() {
+      return request.auth != null && exists(/databases/$(db)/documents/bans/$(request.auth.uid));
+    }
+    function isAdmin() {
+      return request.auth != null && exists(/databases/$(db)/documents/admins/$(request.auth.uid));
+    }
+    function shortText(v, max) { return v is string && v.size() <= max; }
+    function validSubmission(d) {
+      return d.keys().hasOnly(['uid', 'username', 'name', 'url', 'author', 'relation', 'license', 'genre', 'description', 'status', 'createdAt'])
+        && d.uid == request.auth.uid
+        && d.status == 'pending'
+        && d.createdAt == request.time
+        && shortText(d.name, 80) && d.name.size() > 0
+        && shortText(d.url, 300) && d.url.matches('https?://.+')
+        && shortText(d.author, 80) && d.author.size() > 0
+        && d.relation in ['mine', 'permission', 'license']
+        && shortText(d.username, 40) && shortText(d.license, 80)
+        && shortText(d.genre, 40) && shortText(d.description, 500);
+    }
+
+    function validStatsWrite() {
+      let uid = request.auth.uid;
+      let after = request.resource.data;
+      let before = resource == null ? {} : resource.data;
+      let zk = after.last.z;
+      return zk is string && zk.matches('z-?[0-9]{1,6}')
+        && after.last.keys().hasOnly(['z', 'u']) && after.last.u == uid
+        && after.diff(before).affectedKeys().hasOnly([zk, 'last'])
+        && zoneEntryOk(before.get(zk, {}), after.get(zk, {}), uid);
+    }
+
+    function zoneEntryOk(b, a, uid) {
+      let vChanged = a.get('v', {}).diff(b.get('v', {})).affectedKeys();
+      let rChanged = a.get('r', {}).diff(b.get('r', {})).affectedKeys();
+      return a.keys().hasOnly(['v', 'r'])
+        && vChanged.hasOnly([uid]) && rChanged.hasOnly([uid])
+        && (vChanged.size() == 0 || !(uid in a.get('v', {})) || a.v[uid] == 1 || a.v[uid] == -1)
+        && (rChanged.size() == 0 || !(uid in a.get('r', {})) || a.r[uid] == request.time);
+    }
+  }
+}

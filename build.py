@@ -8,6 +8,11 @@ one file.
 
 Usage:
     python3 build.py <path to SCHSwork/math checkout> [output file]
+    python3 build.py --template <path to SCHSwork/math checkout> [output file]
+
+--template makes a clean copy for other people to host with their own
+Firebase: no Firebase project built in, no owner settings pulled from
+SCHSwork/math, and one GN_CONFIG block at the top of the file to fill in.
 """
 import base64
 import json
@@ -15,8 +20,10 @@ import re
 import sys
 from pathlib import Path
 
-SRC = Path(sys.argv[1] if len(sys.argv) > 1 else "math")
-OUT = Path(sys.argv[2] if len(sys.argv) > 2 else "index.html")
+ARGS = [a for a in sys.argv[1:] if a != "--template"]
+TEMPLATE = "--template" in sys.argv[1:]
+SRC = Path(ARGS[0] if len(ARGS) > 0 else "math")
+OUT = Path(ARGS[1] if len(ARGS) > 1 else ("template/index.html" if TEMPLATE else "index.html"))
 
 # Config files the site fetches with relative URLs; served from inside the page
 EMBEDDED_FILES = [
@@ -37,6 +44,69 @@ def data_uri(path, mime):
 def safe_in_script(text):
     # Keep inlined code from ending its <script> early or opening an HTML comment
     return re.sub(r"</(script)", r"<\\/\1", text, flags=re.I).replace("<!--", "<\\!--")
+
+
+# ── Template build ──────────────────────────────────────────────────────────
+TEMPLATE_CONFIG = """<script>
+// ═════════════════════════════════════════════════════════════════════════════
+//  YOUR SETTINGS: the only part of this file you need to edit.
+//  Step-by-step guide: SETUP.md (github.com/SCHSwork/single-file-gn-2.0/tree/main/template)
+// ═════════════════════════════════════════════════════════════════════════════
+window.GN_CONFIG = {
+    // Accounts + cloud saves. Paste your Firebase web config here, e.g.
+    //   firebase: { apiKey: "...", authDomain: "...", projectId: "...",
+    //               storageBucket: "...", messagingSenderId: "...", appId: "..." },
+    // Leave it null and the site works without accounts.
+    firebase: null,
+
+    // Optional: a GitHub repo of yours ("you/your-repo") holding
+    // config/owner-settings.json, for the owner panel (lock the site,
+    // announcements, disable games). Leave "" to turn that off.
+    settingsRepo: ""
+};
+</script>
+"""
+
+CLEAN_OWNER_SETTINGS = {
+    "siteMode": "open",
+    "disabledZones": [],
+    "announcement": {"text": "", "enabled": False, "type": "info"},
+    "siteMessage": "",
+    "statusOverride": {"level": "auto", "text": ""},
+    "motd": {"text": "", "enabled": False},
+    "footerLinks": [],
+    "visitorDefaults": {
+        "mode": "dark", "theme": "red", "cardSize": "medium", "fontSize": "medium",
+        "defaultSort": "name", "compactMode": False, "hideFeatured": False,
+        "autofocusSearch": True, "showPlayCount": True, "warnBeforeUnload": False,
+        "reducedMotion": False
+    },
+    "trustedReporters": []
+}
+
+
+def patch(js, path, old, new, regex=False):
+    out, n = (re.subn(old, new, js, count=1) if regex else (js.replace(old, new, 1), js.count(old)))
+    if n == 0:
+        sys.exit(f"build.py --template: couldn't find what to change in {path} ({old[:60]!r}); the site's code changed")
+    return out
+
+
+def template_js(path, js):
+    if path == "js/accounts.js":
+        # The real config is the first FIREBASE_CONFIG (the second one is an example in a comment)
+        js = patch(js, path, r"const FIREBASE_CONFIG = \{[^}]*\};",
+                   "const FIREBASE_CONFIG = (window.GN_CONFIG && window.GN_CONFIG.firebase) || null;", regex=True)
+    if path == "js/app.js":
+        guard = "\n    if (!(window.GN_CONFIG && window.GN_CONFIG.settingsRepo)) return {}; // template: no settings repo set\n"
+        js = patch(js, path, 'const GITHUB_SYNC_REPO  = "SCHSwork/math";',
+                   'const GITHUB_SYNC_REPO  = (window.GN_CONFIG && window.GN_CONFIG.settingsRepo) || "SCHSwork/math";')
+        js = patch(js, path, "async function githubSyncPull({ rerender = false } = {}) {",
+                   "async function githubSyncPull({ rerender = false } = {}) {"
+                   + guard.replace(" return {};", " return;"))
+        js = patch(js, path, "async function githubSyncPushOnce() {",
+                   "async function githubSyncPushOnce() {" + guard.replace(" return {};", " return false;"))
+    return js
 
 
 def minify_json(path):
@@ -75,6 +145,8 @@ def main():
         if path in SKIP_SCRIPTS:
             return f"<!-- {path} left out: service workers need a hosted multi-file site -->"
         js = (SRC / path).read_text(encoding="utf-8")
+        if TEMPLATE:
+            js = template_js(path, js)
         return f"<script>/* {path} */\n{safe_in_script(js)}\n</script>"
     html = re.sub(r'<script src="([^"?]+)(?:\?[^"]*)?"></script>', inline_js, html)
     if not seen:
@@ -85,6 +157,8 @@ def main():
 
     # Config files, plus a fetch() wrapper that serves them from the page
     files = {p: minify_json(p) for p in EMBEDDED_FILES if (SRC / p).exists()}
+    if TEMPLATE:
+        files["config/owner-settings.json"] = json.dumps(CLEAN_OWNER_SETTINGS, separators=(",", ":"))
     shim = """<script>
 // Single-file build: the config files are inside this page, so fetches for
 // them are answered here instead of going to the network.
@@ -118,7 +192,7 @@ def main():
                 + safe_in_script(json.dumps(files, separators=(",", ":"), ensure_ascii=False))
                 + "</script>\n")
     # Must run before any site script, so put it right after <head>
-    html = html.replace("<head>", "<head>\n" + embedded + shim, 1)
+    html = html.replace("<head>", "<head>\n" + (TEMPLATE_CONFIG if TEMPLATE else "") + embedded + shim, 1)
 
     commit = ""
     try:
@@ -127,10 +201,14 @@ def main():
                                 capture_output=True, text=True, check=True).stdout.strip()
     except Exception:
         pass
-    banner = ("<!-- GN 2.0 single-file build. Generated by build.py from SCHSwork/math"
+    kind = "template (fill in GN_CONFIG below)" if TEMPLATE else "build"
+    banner = (f"<!-- GN 2.0 single-file {kind}. Generated by build.py from SCHSwork/math"
               + (f" @ {commit}" if commit else "") + ". Don't edit by hand. -->\n")
     html = html.replace("<!DOCTYPE html>\n", "<!DOCTYPE html>\n" + banner, 1)
+    OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(html, encoding="utf-8")
+    if TEMPLATE and (SRC / "config/firestore.rules").exists():
+        (OUT.parent / "firestore.rules").write_text((SRC / "config/firestore.rules").read_text(encoding="utf-8"), encoding="utf-8")
     print(f"Wrote {OUT} ({OUT.stat().st_size / 1024:.0f} KB): "
           f"{len(seen) - len(SKIP_SCRIPTS & set(seen))} scripts, {len(files)} config files inlined")
 
