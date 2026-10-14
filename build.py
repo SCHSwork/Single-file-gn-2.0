@@ -125,6 +125,26 @@ def template_js(path, js):
                    "    else frame.srcdoc = html;\n"
                    "}")
         js = patch(js, path, "if (zoneFrame.contentDocument === null) replaceZoneFrame();", "")
+        # Opened from disk, blob: URLs look like "blob:null/<id>". Older Unity
+        # loaders only treat http/https/ftp/file URLs as absolute, so they glue
+        # these onto the game's folder ("…/198/blob:null/<id>") and the last
+        # download 404s: the game stops near the end of loading. Undo that inside
+        # every game page.
+        # (No backslashes in this snippet: it goes inside a JS template literal.)
+        blob_fix = ('<script>(function(){var re=new RegExp("/(blob:null/[0-9a-f-]{36})([?#]|$)","i");'
+                    'function fix(u){try{var s=String(u&&u.url!==undefined?u.url:u);if(s.indexOf("blob:")===0)return null;var m=s.match(re);if(m)return m[1]}catch(e){}return null}'
+                    'var o=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){var f=fix(u);if(f){var a=[].slice.call(arguments);a[1]=f;return o.apply(this,a)}return o.apply(this,arguments)};'
+                    'if(window.fetch){var F=window.fetch;window.fetch=function(i,n){var f=fix(i);return F.call(this,f||i,n)}}'
+                    # Opened from disk, some engines (OpenFL/Lime: Run 3 etc.) assume every image is
+                    # "same origin" and skip CORS, so WebGL refuses to draw them: black screen.
+                    # Ask for CORS on images from hosts that allow it, only when opened from disk.
+                    'if(self.origin==="null"){var H=new RegExp("^https?://(cdn[.]jsdelivr[.]net|raw[.]githubusercontent[.]com|rawcdn[.]githack[.]com|raw[.]githack[.]com|unpkg[.]com|[^/]+[.]github[.]io)/","i");'
+                    'var d=Object.getOwnPropertyDescriptor(HTMLImageElement.prototype,"src");'
+                    'if(d&&d.set)Object.defineProperty(HTMLImageElement.prototype,"src",{configurable:true,enumerable:d.enumerable,get:d.get,set:function(v){try{if(this.crossOrigin===null&&H.test(new URL(v,document.baseURI).href))this.crossOrigin="anonymous"}catch(e){}d.set.call(this,v)}});'
+                    'var sa=Element.prototype.setAttribute;Element.prototype.setAttribute=function(n,v){try{if(this instanceof HTMLImageElement&&String(n).toLowerCase()==="src"&&this.crossOrigin===null&&H.test(new URL(v,document.baseURI).href))this.crossOrigin="anonymous"}catch(e){}return sa.apply(this,arguments)}}'
+                    '})();</scr${""}ipt>')
+        js = patch(js, path, "`})();<\\/script><style>#sidebarad1,#sidebarad2{display:none!important}</style>` +",
+                   "`})();<\\/script><style>#sidebarad1,#sidebarad2{display:none!important}</style>` +\n        `" + blob_fix + "` +")
         js = patch(js, path, "async function githubSyncPull({ rerender = false } = {}) {",
                    "async function githubSyncPull({ rerender = false } = {}) {"
                    + guard.replace(" return {};", " return;"))

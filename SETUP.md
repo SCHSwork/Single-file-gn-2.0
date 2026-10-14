@@ -273,6 +273,10 @@ Your accounts, saves and settings live in your Firebase and your GitHub repo, no
 - In those viewers the site works, but favorites and progress reset when you close it. For saves, open the file in Chrome (or another browser) instead, or use the hosted link.
 - If you see "This app can't run games", the viewer has JavaScript off. Open the file in a browser.
 - Games still need internet. Only the site itself is inside the file.
+- A few games won't run from a file at all, because they're locked to certain websites (Run 3 is one). Those work when the file is hosted (Part A).
+
+**Games stop right before they finish loading (opened from a file)**
+- Download the newest `index.html`. Older copies broke Unity games like Slope at the very end of loading when opened from a file. Hosted copies were never affected.
 
 **The person icon (account button) doesn't appear**
 - You're seeing an old copy. Refresh with **Ctrl+Shift+R** and wait a minute after uploading.
