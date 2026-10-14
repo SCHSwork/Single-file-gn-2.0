@@ -1,0 +1,46 @@
+name: Build single file
+
+# Rebuilds index.html from SCHSwork/math so this copy stays in sync.
+on:
+  schedule:
+    - cron: "17 */6 * * *"   # every 6 hours
+  workflow_dispatch:          # "Run workflow" button in the Actions tab
+  push:
+    paths:
+      - build.py
+      - .github/workflows/build.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get the latest GN 2.0
+        uses: actions/checkout@v4
+        with:
+          repository: SCHSwork/math
+          path: .source/math
+
+      - name: Build index.html
+        run: python3 build.py .source/math index.html
+
+      - name: Commit if it changed
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No changes"
+            exit 0
+          fi
+          src=$(git -C .source/math rev-parse --short HEAD)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Rebuild from SCHSwork/math@$src"
+          git push
