@@ -3536,6 +3536,29 @@ function displayFeaturedZones(featuredZones) {
 // locks up building ~2,000 cards in one go. A newer draw cancels an older one.
 const FIRST_CARD_BATCH = 48;
 let zonesDrawId = 0;
+const GN_CARD_PAGE = 150;
+let gnSentinelObserver = null;
+function gnListSentinel() {
+    let el = document.getElementById("gnListEnd");
+    if (!el) {
+        el = document.createElement("div");
+        el.id = "gnListEnd"; el.setAttribute("aria-hidden", "true"); el.style.height = "1px";
+        container.after(el);
+    }
+    if (!gnSentinelObserver && "IntersectionObserver" in window) {
+        gnSentinelObserver = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting) && window.__gnMoreCards) window.__gnMoreCards(); }, { rootMargin: "0px 0px 1600px 0px" });
+        gnSentinelObserver.observe(el);
+    }
+    return el;
+}
+// After a page is built: if the end of the list is still on screen, keep going
+function gnCheckListEnd() {
+    const el = document.getElementById("gnListEnd");
+    if (!el || !window.__gnMoreCards) return;
+    if (!("IntersectionObserver" in window)) { window.__gnMoreCards(); return; }
+    const r = el.getBoundingClientRect();
+    if (r.height || r.top) { if (r.top < innerHeight + 1600) window.__gnMoreCards(); }
+}
 function displayZones(zones) {
     const drawId = ++zonesDrawId;
     clearCards(container);
@@ -3564,12 +3587,18 @@ function displayZones(zones) {
     addCards(built => built >= FIRST_CARD_BATCH);
 
     const idle = window.requestIdleCallback || (cb => setTimeout(() => cb({ timeRemaining: () => 8 }), 16));
+    let limit = GN_CARD_PAGE;
     const step = deadline => {
         if (drawId !== zonesDrawId || next >= visibleZones.length) return;
-        // At least a few cards per step so it always finishes, more when the browser is free
-        addCards(built => built >= 12 && deadline.timeRemaining() < 3);
+        if (next >= limit) { gnCheckListEnd(); return; }
+        addCards(built => (built >= 12 && deadline.timeRemaining() < 3) || next >= limit);
         if (next < visibleZones.length) idle(step);
     };
+    window.__gnMoreCards = () => {
+        if (drawId !== zonesDrawId || next >= visibleZones.length || next < limit) return;
+        limit = next + GN_CARD_PAGE; idle(step);
+    };
+    gnListSentinel();
     idle(step);
 }
 
@@ -9880,9 +9909,11 @@ function collectStatusChecks() {
     });
 
     // Accounts and cloud saves (Firebase)
-    const cloudFail = typeof cloudStatus === "string" && /couldn't load/i.test(cloudStatus);
+    const cloudOff = typeof FIREBASE_CONFIG === "undefined" || !FIREBASE_CONFIG;
     const cloudOk = typeof cloudDb !== "undefined" && cloudDb;
-    checks.push({
+    const cloudFail = !cloudOk && ((typeof cloudStatus === "string" && /couldn't load/i.test(cloudStatus)) || performance.now() > 20000);
+    if (cloudOff) checks.push({ name: "Accounts & cloud saves", level: "info", detail: "Not set up on this site. Games save on this device." });
+    else checks.push({
         name: "Accounts & cloud saves",
         level: cloudFail ? "degraded" : cloudOk ? "ok" : "loading",
         detail: cloudFail ? "Couldn't connect. Games still work and save on this device." : cloudOk ? "Working" : "Connecting…"
@@ -9899,7 +9930,7 @@ function collectStatusChecks() {
         });
     }
 
-    if (typeof syncPaceSummary === "function") checks.push({ name: "Live updates", ...syncPaceSummary() });
+    if (typeof syncPaceSummary === "function" && typeof GITHUB_SYNC_REPO !== "undefined" && GITHUB_SYNC_REPO) checks.push({ name: "Live updates", ...syncPaceSummary() });
     if (typeof fbPaceSummary === "function" && typeof FIREBASE_CONFIG !== "undefined" && FIREBASE_CONFIG) {
         checks.push({ name: "Database use", ...fbPaceSummary() });
     }

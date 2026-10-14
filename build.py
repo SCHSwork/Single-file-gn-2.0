@@ -150,6 +150,75 @@ def template_js(path, js):
                    + guard.replace(" return {};", " return;"))
         js = patch(js, path, "async function githubSyncPushOnce() {",
                    "async function githubSyncPushOnce() {" + guard.replace(" return {};", " return false;"))
+    if path == "js/app.js":
+        # Phones: drawing all ~1,700 cards makes scrolling stutter. Build the
+        # All games list in pages of 150 and add the next page as you near the
+        # bottom (measured: ~22 -> ~32 fps scrolling on a throttled phone).
+        js = patch(js, path,
+                   "    const idle = window.requestIdleCallback || (cb => setTimeout(() => cb({ timeRemaining: () => 8 }), 16));\n"
+                   "    const step = deadline => {\n"
+                   "        if (drawId !== zonesDrawId || next >= visibleZones.length) return;\n"
+                   "        // At least a few cards per step so it always finishes, more when the browser is free\n"
+                   "        addCards(built => built >= 12 && deadline.timeRemaining() < 3);\n"
+                   "        if (next < visibleZones.length) idle(step);\n"
+                   "    };\n"
+                   "    idle(step);",
+                   "    const idle = window.requestIdleCallback || (cb => setTimeout(() => cb({ timeRemaining: () => 8 }), 16));\n"
+                   "    let limit = GN_CARD_PAGE;\n"
+                   "    const step = deadline => {\n"
+                   "        if (drawId !== zonesDrawId || next >= visibleZones.length) return;\n"
+                   "        if (next >= limit) { gnCheckListEnd(); return; }\n"
+                   "        addCards(built => (built >= 12 && deadline.timeRemaining() < 3) || next >= limit);\n"
+                   "        if (next < visibleZones.length) idle(step);\n"
+                   "    };\n"
+                   "    window.__gnMoreCards = () => {\n"
+                   "        if (drawId !== zonesDrawId || next >= visibleZones.length || next < limit) return;\n"
+                   "        limit = next + GN_CARD_PAGE; idle(step);\n"
+                   "    };\n"
+                   "    gnListSentinel();\n"
+                   "    idle(step);")
+        js = patch(js, path, "function displayZones(zones) {",
+                   "const GN_CARD_PAGE = 150;\n"
+                   "let gnSentinelObserver = null;\n"
+                   "function gnListSentinel() {\n"
+                   "    let el = document.getElementById(\"gnListEnd\");\n"
+                   "    if (!el) {\n"
+                   "        el = document.createElement(\"div\");\n"
+                   "        el.id = \"gnListEnd\"; el.setAttribute(\"aria-hidden\", \"true\"); el.style.height = \"1px\";\n"
+                   "        container.after(el);\n"
+                   "    }\n"
+                   "    if (!gnSentinelObserver && \"IntersectionObserver\" in window) {\n"
+                   "        gnSentinelObserver = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting) && window.__gnMoreCards) window.__gnMoreCards(); }, { rootMargin: \"0px 0px 1600px 0px\" });\n"
+                   "        gnSentinelObserver.observe(el);\n"
+                   "    }\n"
+                   "    return el;\n"
+                   "}\n"
+                   "// After a page is built: if the end of the list is still on screen, keep going\n"
+                   "function gnCheckListEnd() {\n"
+                   "    const el = document.getElementById(\"gnListEnd\");\n"
+                   "    if (!el || !window.__gnMoreCards) return;\n"
+                   "    if (!(\"IntersectionObserver\" in window)) { window.__gnMoreCards(); return; }\n"
+                   "    const r = el.getBoundingClientRect();\n"
+                   "    if (r.height || r.top) { if (r.top < innerHeight + 1600) window.__gnMoreCards(); }\n"
+                   "}\n"
+                   "function displayZones(zones) {")
+    if path == "js/status.js":
+        # Accounts row: say "not set up" when there's no Firebase, and stop
+        # waiting after 20s when Firebase never answers (blocked or very slow
+        # network), so the light doesn't stay on "Checking…" forever.
+        js = patch(js, path,
+                   "    const cloudFail = typeof cloudStatus === \"string\" && /couldn't load/i.test(cloudStatus);\n"
+                   "    const cloudOk = typeof cloudDb !== \"undefined\" && cloudDb;\n"
+                   "    checks.push({",
+                   "    const cloudOff = typeof FIREBASE_CONFIG === \"undefined\" || !FIREBASE_CONFIG;\n"
+                   "    const cloudOk = typeof cloudDb !== \"undefined\" && cloudDb;\n"
+                   "    const cloudFail = !cloudOk && ((typeof cloudStatus === \"string\" && /couldn't load/i.test(cloudStatus)) || performance.now() > 20000);\n"
+                   "    if (cloudOff) checks.push({ name: \"Accounts & cloud saves\", level: \"info\", detail: \"Not set up on this site. Games save on this device.\" });\n"
+                   "    else checks.push({")
+        # Live updates only exist when the host connected a settings repo
+        js = patch(js, path,
+                   "    if (typeof syncPaceSummary === \"function\") checks.push(",
+                   "    if (typeof syncPaceSummary === \"function\" && typeof GITHUB_SYNC_REPO !== \"undefined\" && GITHUB_SYNC_REPO) checks.push(")
     if path == "js/library.js":
         # Changelog comes from the host's settings repo, if they have one
         js = patch(js, path, "async function loadChangelog() {",
