@@ -1,6 +1,6 @@
 # Host your own GN 2.0 — setup guide
 
-This folder has everything you need to run your own copy of GN 2.0:
+This repo has everything you need to run your own copy of GN 2.0:
 
 | File | What it is |
 |---|---|
@@ -8,7 +8,7 @@ This folder has everything you need to run your own copy of GN 2.0:
 | `firestore.rules` | Security rules you paste into Firebase (step 3). |
 | `SETUP.md` | This guide. |
 
-Your copy is completely separate from the original GN 2.0. It has **no Firebase project built in** and **doesn't follow the original site's owner settings**, so nothing the original owner does can lock, change or shut down your site.
+Your copy is completely separate from the original GN 2.0. It has **no Firebase project built in**, **doesn't follow the original site's owner settings** and **doesn't use the original site's accounts, database or usage**. Nothing the original owner does can lock, change or shut down your site.
 
 **How long it takes:** about 5 minutes for games only (Part A), about 20 minutes with accounts (Parts A–C).
 
@@ -33,7 +33,7 @@ Your copy is completely separate from the original GN 2.0. It has **no Firebase 
 
 ### A1. Download the file
 
-1. Open `index.html` in this folder on GitHub.
+1. Open `index.html` in this repo on GitHub.
 2. Click the **Download raw file** button (the ⬇ arrow, top right of the file).
 3. Save it somewhere you'll find it, like your Desktop. Keep the name `index.html`.
 
@@ -110,7 +110,7 @@ Players only ever type a username and password. Behind the scenes, the site turn
 
 The rules decide who can read and change what. For example, only you can see your own saves, and each person can vote once per game. **Without them, accounts won't work.**
 
-1. Open `firestore.rules` in this folder on GitHub and click the **Copy raw file** button (two squares, top right).
+1. Open `firestore.rules` in this repo on GitHub and click the **Copy raw file** button (two squares, top right).
 2. In Firebase, go to **Firestore Database → Rules**.
 3. Select everything in the editor, delete it, and paste.
 4. Click **Publish**.
@@ -253,10 +253,10 @@ Changes you make in the Owner Panel reach every visitor within a few minutes.
 
 ## Updating your copy
 
-The original GN 2.0 keeps getting new games and fixes, and this folder is rebuilt automatically when it does. To update:
+The original GN 2.0 keeps getting new games and fixes, and this repo is rebuilt automatically when it does. To update:
 
 1. Open your current `index.html` and **copy your whole `GN_CONFIG` block**.
-2. Download the new `index.html` from this folder.
+2. Download the new `index.html` from this repo.
 3. Open it, replace its `GN_CONFIG` block with yours, and save.
 4. Upload it to your host.
 
