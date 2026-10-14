@@ -109,6 +109,22 @@ def template_js(path, js):
                    'MIRRORS[name]("freebuisness", "assets", "main", "zones.json")')
         js = patch(js, path, "put it in SCHSwork/GN-originals (see its README), then mark it added.",
                    "add it to your site, then mark it added.")
+        # Locked-down viewers (phone Files apps) can't reach into the game frame;
+        # fill it with srcdoc there instead.
+        for src in ("gameLoadingScreenHtml(file)", "html"):
+            js = patch(js, path,
+                       f"zoneFrame.contentDocument.open();\n            zoneFrame.contentDocument.write({src});\n            zoneFrame.contentDocument.close();"
+                       if src == "html" else
+                       f"zoneFrame.contentDocument.open();\n        zoneFrame.contentDocument.write({src});\n        zoneFrame.contentDocument.close();",
+                       f"gnWriteFrame(zoneFrame, {src});")
+        js = patch(js, path, "let zoneOpenToken = 0;",
+                   "let zoneOpenToken = 0;\n"
+                   "function gnWriteFrame(frame, html) {\n"
+                   "    const doc = frame.contentDocument;\n"
+                   "    if (doc) { doc.open(); doc.write(html); doc.close(); }\n"
+                   "    else frame.srcdoc = html;\n"
+                   "}")
+        js = patch(js, path, "if (zoneFrame.contentDocument === null) replaceZoneFrame();", "")
         js = patch(js, path, "async function githubSyncPull({ rerender = false } = {}) {",
                    "async function githubSyncPull({ rerender = false } = {}) {"
                    + guard.replace(" return {};", " return;"))
@@ -120,6 +136,60 @@ def template_js(path, js):
                    "async function loadChangelog() {\n"
                    "    if (!GITHUB_SYNC_REPO) { legalPopup(\"Changelog\", \"<p>This site doesn't have a changelog.</p>\"); return; }")
     return js
+
+
+STORAGE_SHIM = """<script>
+// Phone file viewers (opening the file from Files / Downloads) often block
+// browser storage, and reading it throws. The site reads storage as it starts,
+// so without this it would stop at "Loading games…". Fall back to in-memory
+// storage: everything works, but settings and favorites last only until the
+// page is closed.
+(function () {
+    function memoryStorage() {
+        var data = {};
+        var api = {
+            getItem: function (k) { k = String(k); return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null; },
+            setItem: function (k, v) { data[String(k)] = String(v); },
+            removeItem: function (k) { delete data[String(k)]; },
+            clear: function () { data = {}; },
+            key: function (i) { var ks = Object.keys(data); return i < ks.length ? ks[i] : null; }
+        };
+        Object.defineProperty(api, "length", { get: function () { return Object.keys(data).length; } });
+        return api;
+    }
+    var blocked = [];
+    ["localStorage", "sessionStorage"].forEach(function (name) {
+        try {
+            var s = window[name];
+            var t = "__gn_test__";
+            s.setItem(t, "1"); s.removeItem(t);
+        } catch (e) {
+            try {
+                Object.defineProperty(window, name, { value: memoryStorage(), configurable: true });
+                blocked.push(name);
+            } catch (e2) {}
+        }
+    });
+    try { void document.cookie; } catch (e) {
+        try { Object.defineProperty(document, "cookie", { get: function () { return ""; }, set: function () {}, configurable: true }); } catch (e2) {}
+    }
+    window.GN_STORAGE_BLOCKED = blocked.length > 0;
+    if (window.GN_STORAGE_BLOCKED) {
+        window.addEventListener("load", function () {
+            setTimeout(function () {
+                var msg = "This app can't save, so favorites, settings and game progress reset when you close it. For saves, open the file in Chrome or another browser.";
+                if (typeof notify === "function") notify(msg); else console.warn(msg);
+            }, 2500);
+        });
+    }
+})();
+</script>
+"""
+
+NOSCRIPT = """<noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:#0f172a;color:#f1f5f9;font:16px/1.5 system-ui,sans-serif;text-align:center;">
+<div><h2 style="margin:0 0 12px;">This app can't run games</h2>
+<p style="margin:0;">The viewer you opened this file with has JavaScript turned off. Open the file in a web browser instead, like Chrome, Edge, Firefox or Safari.</p></div></div></noscript>
+"""
 
 
 def minify_json(path):
@@ -211,7 +281,8 @@ def main():
                 + safe_in_script(json.dumps(files, separators=(",", ":"), ensure_ascii=False))
                 + "</script>\n")
     # Must run before any site script, so put it right after <head>
-    html = html.replace("<head>", "<head>\n" + (TEMPLATE_CONFIG if TEMPLATE else "") + embedded + shim, 1)
+    html = html.replace("<head>", "<head>\n" + STORAGE_SHIM + (TEMPLATE_CONFIG if TEMPLATE else "") + embedded + shim, 1)
+    html = re.sub(r"(<body[^>]*>)", lambda m: m.group(1) + "\n" + NOSCRIPT, html, count=1)
 
     commit = ""
     try:

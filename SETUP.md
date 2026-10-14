@@ -268,6 +268,12 @@ Your accounts, saves and settings live in your Firebase and your GitHub repo, no
 
 ## Troubleshooting
 
+**Stuck on "Loading games…" when opening the file on a phone**
+- Download the newest `index.html`. Older copies froze in phone file viewers that don't let pages save data.
+- In those viewers the site works, but favorites and progress reset when you close it. For saves, open the file in Chrome (or another browser) instead, or use the hosted link.
+- If you see "This app can't run games", the viewer has JavaScript off. Open the file in a browser.
+- Games still need internet. Only the site itself is inside the file.
+
 **The person icon (account button) doesn't appear**
 - You're seeing an old copy. Refresh with **Ctrl+Shift+R** and wait a minute after uploading.
 - There's a typo in `GN_CONFIG`. Check for a missing comma after the closing `}` of `firebase`, or quotes that got turned into curly quotes (“ ”). TextEdit and Word do this, so use plain quotes `"`. To check: press **F12** on your site → **Console** and look for a red error near the top.
