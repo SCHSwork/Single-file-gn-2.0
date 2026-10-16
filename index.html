@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ 05cd40f95e. -->
+<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ e48a6568c2. -->
 <html lang="en">
     <head>
 <script>
@@ -2207,14 +2207,42 @@ html.owner-mode-bar-on body { padding-top: 56px; }
 .admin-act-empty { color: var(--text-muted); font-size: 12.5px; padding: 0.2rem; }
 .fb-review.admin-flash { outline: 2px solid var(--primary); outline-offset: 2px; }
 
+/* ── Scrollbars: slim, rounded and in the theme color ───────────────────── */
+/* Theme colors live on <body>
+<noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:#0f172a;color:#f1f5f9;font:16px/1.5 system-ui,sans-serif;text-align:center;">
+<div><h2 style="margin:0 0 12px;">This app can't run games</h2>
+<p style="margin:0;">The viewer you opened this file with has JavaScript turned off. Open the file in a web browser instead, like Chrome, Edge, Firefox or Safari.</p></div></div></noscript>
+; the page's own scrollbar belongs to <html>, so a
+   tiny script copies them up as --sb-primary / --sb-bg (see app.js). */
+:root { --sb-track: transparent; --sb-thumb: color-mix(in srgb, var(--sb-primary, var(--primary)) 75%, transparent); --sb-thumb-hover: var(--sb-primary, var(--primary)); }
+body { --sb-thumb: color-mix(in srgb, var(--primary) 75%, transparent); --sb-thumb-hover: var(--primary); }
+/* Firefox only: Chrome ignores the custom shapes below if these are set */
+@supports not selector(::-webkit-scrollbar) {
+    html { scrollbar-color: var(--sb-thumb) var(--sb-bg, var(--bg)); scrollbar-width: thin; }
+    * { scrollbar-color: var(--sb-thumb) var(--sb-track); }
+}
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--sb-track); }
+html::-webkit-scrollbar-track { background: var(--sb-bg, var(--bg)); }
+::-webkit-scrollbar-thumb {
+    background: var(--sb-thumb);
+    border-radius: 999px;
+    border: 3px solid transparent;          /* gap around the thumb so it looks slim */
+    background-clip: padding-box;
+    min-height: 48px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--sb-thumb-hover); background-clip: padding-box; }
+::-webkit-scrollbar-thumb:active { background: var(--sb-thumb-hover); background-clip: padding-box; border-width: 2px; }
+::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-button { display: none; height: 0; width: 0; }
+/* Smaller ones inside panels and lists */
+#popupBody::-webkit-scrollbar, .owner-panel-list::-webkit-scrollbar, .status-panel::-webkit-scrollbar,
+.admin-act-list::-webkit-scrollbar, textarea::-webkit-scrollbar { width: 10px; }
+
 </style>
     <meta name="theme-color" content="#fb2651">
 </head>
 <body class="dark-mode">
-<noscript><div style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:#0f172a;color:#f1f5f9;font:16px/1.5 system-ui,sans-serif;text-align:center;">
-<div><h2 style="margin:0 0 12px;">This app can't run games</h2>
-<p style="margin:0;">The viewer you opened this file with has JavaScript turned off. Open the file in a web browser instead, like Chrome, Edge, Firefox or Safari.</p></div></div></noscript>
-
 
     <header>
         <div class="header-content">
@@ -5927,6 +5955,23 @@ function darkMode() {
     document.body.classList.toggle("dark-mode");
     const mode = document.body.classList.contains("dark-mode") ? "dark" : "light";
     localStorage.setItem("gnmath-mode", mode);
+}
+
+// The page scrollbar is drawn for <html>, which can't see the theme colors set
+// on <body>, so copy them up whenever the theme, custom color or mode changes.
+function syncScrollbarColors() {
+    if (!document.body) return;
+    const cs = getComputedStyle(document.body);
+    const root = document.documentElement.style;
+    root.setProperty("--sb-primary", cs.getPropertyValue("--primary").trim() || "#fc2651");
+    root.setProperty("--sb-bg", cs.getPropertyValue("--bg").trim() || cs.backgroundColor);
+}
+if (typeof MutationObserver !== "undefined") {
+    const startSbSync = () => {
+        syncScrollbarColors();
+        new MutationObserver(syncScrollbarColors).observe(document.body, { attributes: true, attributeFilter: ["class", "style"] });
+    };
+    if (document.body) startSbSync(); else document.addEventListener("DOMContentLoaded", startSbSync);
 }
 
 function setTheme(themeName, { persist = true } = {}) {
