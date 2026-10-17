@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ 311856b8a5. -->
+<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ 0269f0290b. -->
 <html lang="en">
     <head>
 <script>
@@ -3146,6 +3146,9 @@ body:not(#z) .theme-button.scene-pick span { color: #fff; text-shadow: 0 1px 4px
 body:not(#z) :is(.scene-prev-clouds, .scene-prev-autumn, .scene-prev-pastel, .scene-prev-confetti, .scene-prev-waves) span { color: #0f172a; text-shadow: 0 1px 3px rgba(255,255,255,.95); }
 body:not(#z) .theme-button.scene-pick.active { outline: 2px solid var(--primary) !important; outline-offset: 2px; }
 
+/* Takedown form footer links */
+.td-foot a, .submit-error a { color: inherit; text-decoration: underline; }
+
 </style>
     <meta name="theme-color" content="#fb2651">
 </head>
@@ -4098,9 +4101,17 @@ const htmlURLFallbacks = [
 const MIRRORS = {
     jsdelivr: (o, r, ref, p) => `https://cdn.jsdelivr.net/gh/${o}/${r}@${ref === "HEAD" ? "latest" : ref}/${p}`,
     github:   (o, r, ref, p) => `https://raw.githubusercontent.com/${o}/${r}/${ref === "latest" ? "HEAD" : ref}/${p}`,
-    githack:  (o, r, ref, p) => `https://rawcdn.githack.com/${o}/${r}/${ref === "latest" ? "HEAD" : ref}/${p}`
+    githack:  (o, r, ref, p) => `https://rawcdn.githack.com/${o}/${r}/${ref === "latest" ? "HEAD" : ref}/${p}`,
+    // Backup addresses for jsDelivr itself, run on other networks (Fastly, G-Core,
+    // Cloudflare). A school filter that blocks cdn.jsdelivr.net often misses these.
+    fastly:   (o, r, ref, p) => `https://fastly.jsdelivr.net/gh/${o}/${r}@${ref === "HEAD" ? "latest" : ref}/${p}`,
+    gcore:    (o, r, ref, p) => `https://gcore.jsdelivr.net/gh/${o}/${r}@${ref === "HEAD" ? "latest" : ref}/${p}`,
+    testingcf:(o, r, ref, p) => `https://testingcf.jsdelivr.net/gh/${o}/${r}@${ref === "HEAD" ? "latest" : ref}/${p}`
 };
-const MIRROR_HOSTS = { "cdn.jsdelivr.net": "jsdelivr", "raw.githubusercontent.com": "github", "rawcdn.githack.com": "githack" };
+const PRIMARY_MIRRORS = ["jsdelivr", "github", "githack"];
+const BACKUP_MIRRORS = ["fastly", "gcore", "testingcf"];
+const MIRROR_HOSTS = { "cdn.jsdelivr.net": "jsdelivr", "raw.githubusercontent.com": "github", "rawcdn.githack.com": "githack",
+    "fastly.jsdelivr.net": "fastly", "gcore.jsdelivr.net": "gcore", "testingcf.jsdelivr.net": "testingcf" };
 const mirrorDown = new Set((() => { try { return JSON.parse(sessionStorage.getItem("gnmath-mirror-down") || "[]"); } catch { return []; } })());
 function markMirror(name, ok) {
     if (!name) return;
@@ -4134,8 +4145,9 @@ function suspectMirror(name) {
     probeMirror(name);
 }
 function mirrorUrls(owner, repo, ref, path) {
-    const order = ["jsdelivr", "github", "githack"];
-    order.sort((a, b) => mirrorDown.has(a) - mirrorDown.has(b)); // working sources first
+    // The three main sources first, then the jsDelivr backups; working ones first
+    const order = [...PRIMARY_MIRRORS, ...BACKUP_MIRRORS];
+    order.sort((a, b) => mirrorDown.has(a) - mirrorDown.has(b));
     return order.map(k => MIRRORS[k](owner, repo, ref, path));
 }
 function mirrorOf(url) { try { return MIRROR_HOSTS[new URL(url).hostname]; } catch { return null; } }
@@ -4170,6 +4182,9 @@ async function fetchFirst(urls, { timeoutMs = 15000, validate, track = true, cac
 // When jsDelivr is unreachable, point the jsDelivr links inside a game at backups
 function rewriteForMirrors(html) {
     if (!mirrorDown.has("jsdelivr") || typeof html !== "string") return html;
+    // A working jsDelivr backup address takes the exact same links (including npm)
+    const alt = BACKUP_MIRRORS.find(m => !mirrorDown.has(m));
+    if (alt) return html.replace(/https?:\/\/cdn\.jsdelivr\.net\//g, `https://${alt}.jsdelivr.net/`);
     return html
         .replace(/https?:\/\/cdn\.jsdelivr\.net\/gh\/([^\/@\s"'`<>]+)\/([^\/@\s"'`<>]+)(?:@([^\/\s"'`<>]+))?\//g,
             (m, o, r, ref) => `https://rawcdn.githack.com/${o}/${r}/${!ref || ref === "latest" ? "HEAD" : ref}/`)
@@ -4860,7 +4875,7 @@ function openRandomZone() {
 
 function openZone(file) {
     if (isZoneDisabled(file.id)) {
-        notify("This game has been turned off by the site owner.");
+        notify(takedownRemovedIds.has(String(file.id)) ? "This game was removed after a request from its owner." : "This game has been turned off by the site owner.");
         return;
     }
 
@@ -5192,8 +5207,11 @@ function setDisabledZoneIds(disabledIds) {
     setJsonStorage(OWNER_STORAGE_KEYS.disabledZones, Array.from(disabledIds));
 }
 
+// Games removed after a copyright takedown (takedown.js keeps this up to date)
+let takedownRemovedIds = (() => { try { return new Set((JSON.parse(localStorage.getItem("gnmath-takedown-removed") || "{}").ids || []).map(String)); } catch { return new Set(); } })();
+
 function isZoneDisabled(zoneId) {
-    return cardCached("disabled", getDisabledZoneIds).has(String(zoneId));
+    return takedownRemovedIds.has(String(zoneId)) || cardCached("disabled", getDisabledZoneIds).has(String(zoneId));
 }
 
 function setZoneDisabled(zoneId, isDisabled) {
@@ -7585,11 +7603,20 @@ function loadPrivacy() {
 
 function loadTerms() {
     legalPopup("Terms of Use", `
-        <p><b>Effective October 9, 2026</b></p>
+        <p><b>Effective October 17, 2026</b></p>
         <p>By using GN 2.0 you agree to these terms. If you don't agree, please don't use the site.</p>
 
         <h3>Games and content</h3>
-        <p>The games listed here are made by and belong to their respective creators and owners. This site does not create them. Most game files are loaded from third-party sources; games in the <b>GN Originals</b> row are open-source games shared under their creators' licenses, with each game's license and credit kept with it and shown in its Info panel. Games marked <span class="ad-badge">AD</span> are <b>partner games</b> from html5games.com (Famobi) or Playgama: they are linked, not copied, load from those platforms' servers under their own terms, and may show their ads, which GN 2.0 doesn't control or profit from. We don't claim ownership of any game, and we aren't responsible for third-party content. If you own a game and want it removed from this site, see the <a href="#" onclick="loadDMCA(); return false;">DMCA</a> page.</p>
+        <p>The games listed here are made by and belong to their respective creators and owners. This site does not create them. Most game files are loaded from third-party sources; games in the <b>GN Originals</b> row are open-source games shared under their creators' licenses, with each game's license and credit kept with it and shown in its Info panel. Games marked <span class="ad-badge">AD</span> are <b>partner games</b> from html5games.com (Famobi) or Playgama: they are linked, not copied, load from those platforms' servers under their own terms, and may show their ads, which GN 2.0 doesn't control or profit from. We don't claim ownership of any game.</p>
+
+        <h3>No affiliation</h3>
+        <p>Game titles, characters, pictures, logos and trademarks belong to their owners. GN 2.0 isn't affiliated with, sponsored by or endorsed by any game's creator, publisher or platform, and using a name here doesn't suggest that it is.</p>
+
+        <h3>Third-party content</h3>
+        <p>Library, partner and community games come from outside sources that GN 2.0 doesn't run. We remove the ad and tracking code we know about, but we don't control what's inside third-party games and can't promise they're accurate, appropriate, safe or free of errors. Links to other sites are provided for convenience; we aren't responsible for their content or practices. If something looks wrong, use <a href="#" onclick="openFeedback('bug'); return false;">Report a problem</a>.</p>
+
+        <h3>Copyright and takedowns</h3>
+        <p>We respect creators' rights. If you own a game listed here and didn't allow it, send a <a href="#" onclick="openTakedownForm(); return false;">takedown request</a>. It goes straight to the site's admins, who review it and remove the game for everyone once ownership is confirmed. See the <a href="#" onclick="loadDMCA(); return false;">DMCA</a> page for details.</p>
 
         <h3>Using the site</h3>
         <ul>
@@ -7599,11 +7626,11 @@ function loadTerms() {
             <li>You're responsible for keeping your password safe. Lost passwords can't be recovered.</li>
         </ul>
 
-        <h3>No warranty</h3>
-        <p>The site and all games are provided "as is" and "as available," without warranties of any kind. Games may stop working, be removed, or lose progress at any time, and cloud saves may be lost. Keep your own backups (Export Data) of anything important.</p>
+        <h3>Provided "as is"</h3>
+        <p>The site and all games are provided "as is" and "as available," without warranties of any kind, express or implied. We don't promise that any game will work, stay available, or keep its progress. Games may stop working or be removed at any time, and cloud saves may be lost. Keep your own backups (Export Data) of anything important.</p>
 
         <h3>Limitation of liability</h3>
-        <p>To the fullest extent allowed by law, the site owner is not liable for any damages or losses from using, or not being able to use, the site, its games, or its accounts and saves.</p>
+        <p>To the fullest extent allowed by law, the site owner and admins are not liable for any damages or losses from using, or not being able to use, the site, its games, or its accounts and saves, including lost progress or problems caused by third-party games or sites.</p>
 
         <h3>Changes</h3>
         <p>We may change these terms or the site at any time. Continuing to use the site means you accept the current terms. See also the <a href="#" onclick="loadPrivacy(); return false;">Privacy Policy</a>.</p>
@@ -7616,28 +7643,32 @@ function loadDMCA() {
     popupBody.innerHTML = `
         <div class="dmca-content">
             <p>
-                GN 2.0 doesn't host any game files. They're loaded from the gn-math game library,
-                which is run by its own owner. If you own or developed a game shown here
-                and would like it removed, please do the following:
+                GN 2.0 respects the rights of game creators. If you own or developed a game shown here
+                and didn't allow it, you can ask for it to be taken down.
             </p>
-            <ol>
-                <li>
-                    Email me at 
-                    <a href="mailto:gn.math.business@gmail.com">gn.math.business@gmail.com</a> 
-                    with the subject starting with <code>!DMCA</code>.
-                </li>
-            </ol>
+            <p><button type="button" class="settings-button" onclick="openTakedownForm()">Send a takedown request</button></p>
             <p>
-                If you are going to do an email, please show proof you own the game before I have to ask.
+                Requests go straight to the site's admins. You don't need an account. Please include
+                a link to your original game and a way for us to confirm you own it (for example, an email
+                from the domain on the official site, or the store page that lists you as the publisher).
+                Once it's confirmed, the game is removed for every visitor, usually within minutes of review.
+            </p>
+            <p>
+                You can also email <a href="mailto:gn.math.business@gmail.com?subject=!DMCA">gn.math.business@gmail.com</a>
+                with the subject starting with <code>!DMCA</code>.
             </p>
             <p>
                 <b>GN Originals</b> are open-source games copied, with their licenses, into
                 <a href="https://github.com/SCHSwork/GN-originals" target="_blank" rel="noopener">github.com/SCHSwork/GN-originals</a>.
-                To have one of those removed or its credit corrected, open an issue on that repository.
+                To have one of those removed or its credit corrected, use the takedown request or open an issue on that repository.
             </p>
             <p>
                 <b>Partner games</b> (marked AD) aren't copied here at all; they're linked from html5games.com or Playgama and
-                play from their servers. To have one removed from this list, use the email above.
+                play from their servers. To have one removed from this list, use the takedown request.
+            </p>
+            <p style="font-size:13px;color:var(--text-muted);">
+                Game names, pictures and trademarks belong to their owners. GN 2.0 isn't affiliated with or endorsed by them.
+                See the <a href="#" onclick="loadTerms(); return false;">Terms</a>.
             </p>
         </div>
     `;
@@ -9576,6 +9607,7 @@ function toggleGameMenu(ev) {
         "-",
         ["⚠", "Report broken", () => reportCurrentZone()],
         ["📝", "Report a problem…", () => openFeedback("bug")],
+        ["©", "Copyright takedown…", () => openTakedownForm(zone)],
         ["🗑", `Clear this game's data${tracked ? "" : "…"}`, () => clearCurrentGameData(), true]
     ];
     for (const it of items) {
@@ -11031,6 +11063,292 @@ async function renderOwnerSubmissions() {
 }
 
 </script>
+<script>/* js/takedown.js */
+// ═════════════════════════════════════════════════════════════════════════════
+// Copyright takedown requests.
+// A game's owner fills in the form (DMCA page, Terms, or a game's ⋯ menu). No
+// account is needed, since owners usually won't have one. Each request is saved
+// to Firestore (takedowns/<id>) and only the mods (admins/<uid>) can read it.
+// Mods review requests in Admin Panel → Takedowns. "Remove game" adds the game
+// to removals/games, a public list every visitor checks, so the game is hidden
+// for everyone within a few minutes, with no GitHub token needed.
+// Needs the takedowns and removals rules from config/firestore.rules.
+// ═════════════════════════════════════════════════════════════════════════════
+const TAKEDOWN = {
+    removedKey: "gnmath-takedown-removed",
+    sentKey: "gnmath-takedown-sent",
+    checkEveryMs: 10 * 60 * 1000,      // how often visitors re-check the removed list
+    perDay: 3,                          // requests per device per day
+    email: "gn.math.business@gmail.com"
+};
+const TAKEDOWN_STATUS = {
+    open: "⏳ Waiting for review",
+    info: "✉️ Asked for more info",
+    removed: "🚫 Game removed",
+    rejected: "✖ Rejected",
+    restored: "↩ Game restored"
+};
+
+// ── Everyone: keep the removed list up to date ──────────────────────────────
+function takedownCache() { try { return JSON.parse(localStorage.getItem(TAKEDOWN.removedKey) || "{}") || {}; } catch { return {}; } }
+function applyTakedownRemovals(ids) {
+    const next = new Set(ids.map(String));
+    const same = next.size === takedownRemovedIds.size && [...next].every(id => takedownRemovedIds.has(id));
+    try { localStorage.setItem(TAKEDOWN.removedKey, JSON.stringify({ ids: [...next], at: Date.now() })); } catch {}
+    if (same) return;
+    takedownRemovedIds = next;
+    // Redraw the game grid (not while someone's playing; it redraws on close)
+    if (typeof zones !== "undefined" && zones.length && typeof sortZones === "function"
+        && !(typeof zoneViewer !== "undefined" && zoneViewer.style.display === "flex")) {
+        if (typeof featuredContainer !== "undefined") featuredContainer.innerHTML = "";
+        sortZones();
+    }
+}
+async function refreshTakedownRemovals(force = false) {
+    if (typeof FIREBASE_CONFIG === "undefined" || !FIREBASE_CONFIG) return;
+    if (!force && Date.now() - (takedownCache().at || 0) < TAKEDOWN.checkEveryMs) return;
+    const P = FIREBASE_CONFIG.projectId, KEY = FIREBASE_CONFIG.apiKey;
+    try {
+        const res = await fetch(`https://firestore.googleapis.com/v1/projects/${P}/databases/(default)/documents/removals/games?key=${encodeURIComponent(KEY)}`, { cache: "no-store" });
+        if (typeof fbCount === "function") fbCount(1, 0);
+        if (res.status === 404) return applyTakedownRemovals([]);
+        if (!res.ok) return;
+        const doc = await res.json();
+        const vals = doc.fields?.ids?.arrayValue?.values || [];
+        applyTakedownRemovals(vals.map(v => v.stringValue).filter(Boolean));
+    } catch {}
+}
+refreshTakedownRemovals();
+setInterval(() => { if (!document.hidden) refreshTakedownRemovals(); }, 60 * 1000);
+
+// ── The request form ────────────────────────────────────────────────────────
+function takedownRateOk(note) {
+    let sent = [];
+    try { sent = JSON.parse(localStorage.getItem(TAKEDOWN.sentKey) || "[]"); } catch {}
+    sent = sent.filter(t => Date.now() - t < 864e5);
+    if (note) { sent.push(Date.now()); try { localStorage.setItem(TAKEDOWN.sentKey, JSON.stringify(sent)); } catch {} }
+    return sent.length < TAKEDOWN.perDay;
+}
+function openTakedownForm(zone = null) {
+    if (!zone && typeof zoneViewer !== "undefined" && zoneViewer.style.display === "flex" && typeof currentGameId !== "undefined") {
+        zone = zones.find(z => String(z.id) === String(currentGameId)) || null;
+    }
+    document.getElementById("popupTitle").textContent = "Copyright takedown request";
+    const body = document.getElementById("popupBody");
+    body.contentEditable = false;
+    const cloudOk = typeof cloudDb !== "undefined" && cloudDb;
+    const field = (label, html, hint) => `<label class="submit-field"><span>${label}</span>${html}${hint ? `<small>${hint}</small>` : ""}</label>`;
+    body.innerHTML = `
+        <p style="margin:0 0 0.75rem;font-size:14px;">If you own the rights to a game listed on GN 2.0 and want it taken down, fill this in. It goes straight to the site's admins, who review every request and remove the game for everyone once it's confirmed. You don't need an account.</p>
+        ${cloudOk ? "" : `<p class="submit-error">The request form can't connect on this network right now. Please email <a href="mailto:${TAKEDOWN.email}?subject=!DMCA">${TAKEDOWN.email}</a> with the subject starting with <code>!DMCA</code> instead.</p>`}
+        <form id="td-form" class="submit-form" autocomplete="off" novalidate ${cloudOk ? "" : "hidden"}>
+            ${field("Your name *", `<input id="td-name" maxlength="80" required>`)}
+            ${field("Email for replies *", `<input id="td-email" type="email" maxlength="120" required placeholder="you@example.com">`, "Only the admins can see this. We'll use it only about this request.")}
+            ${field("Company or studio", `<input id="td-org" maxlength="120" placeholder="Optional">`)}
+            ${field("Game on this site *", `<input id="td-game" maxlength="80" list="td-game-list" required placeholder="Start typing the game's name" value="${zone ? escapeHtmlText(zone.name) : ""}"><datalist id="td-game-list"></datalist>`)}
+            ${field("Your original game *", `<input id="td-work" maxlength="300" required placeholder="Link to the official page, store page or website">`)}
+            ${field("How can we confirm you own it? *", `<textarea id="td-proof" maxlength="500" rows="3" required placeholder="e.g. email from the domain on the official site, a link to your developer account, or the store page that lists you as the publisher"></textarea>`)}
+            ${field("Anything else", `<textarea id="td-details" maxlength="1000" rows="2" placeholder="Optional"></textarea>`)}
+            <label class="random-check"><input type="checkbox" id="td-good-faith"> I believe in good faith that this use of the game isn't authorized by the owner, its agent, or the law.</label>
+            <label class="random-check"><input type="checkbox" id="td-accurate"> The information here is accurate, and I am the owner or am authorized to act for the owner.</label>
+            <p id="td-error" class="submit-error" role="alert" hidden></p>
+            <button type="submit" class="settings-button" id="td-send">Send request to the admins</button>
+        </form>
+        <p class="td-foot" style="margin:0.75rem 0 0;font-size:13px;color:var(--text-muted);">Prefer email? Write to <a href="mailto:${TAKEDOWN.email}?subject=!DMCA">${TAKEDOWN.email}</a> with the subject starting with <code>!DMCA</code>. <a href="#" onclick="loadDMCA(); return false;">More about takedowns</a></p>`;
+    // Suggest matching game names as they type (the full list is ~2,000)
+    const input = body.querySelector("#td-game"), list = body.querySelector("#td-game-list");
+    input.addEventListener("input", () => {
+        const q = input.value.trim().toLowerCase();
+        const hits = q.length < 2 || typeof zones === "undefined" ? [] : zones.filter(z => z.name.toLowerCase().includes(q)).slice(0, 15);
+        list.innerHTML = hits.map(z => `<option value="${escapeHtmlText(z.name)}">`).join("");
+    });
+    body.querySelector("#td-form").onsubmit = e => { e.preventDefault(); sendTakedown(zone); };
+    document.getElementById("popupOverlay").style.display = "flex";
+    setTimeout(() => body.querySelector("#td-name")?.focus(), 50);
+}
+function takedownError(msg) {
+    const el = document.getElementById("td-error");
+    if (!el) return;
+    el.textContent = msg;
+    el.hidden = !msg;
+}
+async function sendTakedown(zone) {
+    const val = id => (document.getElementById(id)?.value || "").trim();
+    const name = val("td-name"), email = val("td-email"), org = val("td-org"), gameName = val("td-game"),
+        work = val("td-work"), proof = val("td-proof"), details = val("td-details");
+    if (!name) return takedownError("Please add your name.");
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return takedownError("Please add an email address we can reply to.");
+    if (!gameName) return takedownError("Please say which game on this site it's about.");
+    if (!work) return takedownError("Please link to your original game.");
+    if (proof.length < 10) return takedownError("Please tell us how we can confirm you own it.");
+    if (!document.getElementById("td-good-faith").checked || !document.getElementById("td-accurate").checked) return takedownError("Please tick both statements.");
+    if (!takedownRateOk()) return takedownError(`You've sent several requests today. Please email ${TAKEDOWN.email} instead.`);
+    const match = typeof zones === "undefined" ? null
+        : (zone && zone.name === gameName ? zone : zones.find(z => z.name.toLowerCase() === gameName.toLowerCase()));
+    takedownError("");
+    const btn = document.getElementById("td-send");
+    btn.disabled = true;
+    btn.textContent = "Sending…";
+    try {
+        const data = {
+            name: name.slice(0, 80), email: email.slice(0, 120), org: org.slice(0, 120),
+            gameId: match ? String(match.id).slice(0, 12) : "", gameName: gameName.slice(0, 80),
+            work: work.slice(0, 300), proof: proof.slice(0, 500), details: details.slice(0, 1000),
+            statement: true, status: "open",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        if (typeof cloudUser !== "undefined" && cloudUser) data.uid = cloudUser.uid;
+        await cloudDb.collection("takedowns").add(data);
+        if (typeof fbCount === "function") fbCount(0, 1);
+        takedownRateOk(true);
+        document.getElementById("popupBody").innerHTML = `
+            <p style="font-size:15px;"><b>✓ Request sent.</b></p>
+            <p>The admins will review it and email you at <b>${escapeHtmlText(email)}</b> if they need anything else. Once it's confirmed, the game is removed for everyone.</p>
+            <p style="font-size:13px;color:var(--text-muted);">If it's urgent, you can also email <a href="mailto:${TAKEDOWN.email}?subject=!DMCA">${TAKEDOWN.email}</a>.</p>`;
+    } catch (e) {
+        console.error(e);
+        takedownError(`Couldn't send it (${e.code || e.message || e}). Please email ${TAKEDOWN.email} with the subject starting with !DMCA instead.`);
+        btn.disabled = false;
+        btn.textContent = "Send request to the admins";
+    }
+}
+
+// ── Mods: Admin Panel → Takedowns ───────────────────────────────────────────
+let modTakedowns = [], modTakedownFilter = "open";
+function takedownTime(t) { const d = t?.createdAt?.toDate ? t.createdAt.toDate() : null; return d && !isNaN(d) ? d : null; }
+async function renderModTakedowns() {
+    const box = document.getElementById("admin-takedowns");
+    if (!box) return;
+    box.innerHTML = `
+        <div class="admin-toolbar">
+            <select id="td-mod-filter" aria-label="Show">
+                <option value="open">Waiting for review</option>
+                <option value="removed">Removed games</option>
+                <option value="all">Everything</option>
+            </select>
+        </div>
+        <p id="td-mod-summary" class="admin-summary">Loading…</p>
+        <div id="td-mod-list" class="owner-panel-list fb-mod-list"></div>
+        <p class="admin-footnote">Check the proof before removing a game: the email should match the official site, or the store page should list them. "Remove game" hides it for every visitor within about 10 minutes. Requesters can't see notes, so reply by email.</p>`;
+    const sel = document.getElementById("td-mod-filter");
+    sel.value = modTakedownFilter;
+    sel.onchange = () => { modTakedownFilter = sel.value; drawModTakedowns(); };
+    try {
+        const snap = await cloudDb.collection("takedowns").get();
+        if (typeof fbCount === "function") fbCount(Math.max(1, snap.size), 0);
+        modTakedowns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        updateTakedownTabCount();
+        drawModTakedowns();
+    } catch (e) {
+        document.getElementById("td-mod-summary").textContent = "Couldn't load takedown requests: " + (e.code || e.message || e) + ". Make sure the newest config/firestore.rules is published.";
+    }
+}
+function updateTakedownTabCount() {
+    const n = modTakedowns.filter(t => t.status === "open" || t.status === "info").length;
+    const tab = document.querySelector('.admin-tabs button[data-tab="takedowns"]');
+    if (!tab) return;
+    tab.querySelector(".admin-tab-count")?.remove();
+    if (n) tab.insertAdjacentHTML("beforeend", ` <span class="admin-tab-count">${n}</span>`);
+}
+async function setGameRemoved(gameId, removed) {
+    const FV = firebase.firestore.FieldValue;
+    await cloudDb.collection("removals").doc("games").set({
+        ids: removed ? FV.arrayUnion(String(gameId)) : FV.arrayRemove(String(gameId)),
+        updatedAt: FV.serverTimestamp(),
+        updatedBy: currentUsername().slice(0, 40)
+    }, { merge: true });
+    if (typeof fbCount === "function") fbCount(0, 1);
+    const ids = new Set(takedownRemovedIds);
+    removed ? ids.add(String(gameId)) : ids.delete(String(gameId));
+    applyTakedownRemovals([...ids]);
+}
+function drawModTakedowns() {
+    const listEl = document.getElementById("td-mod-list");
+    if (!listEl) return;
+    const f = modTakedownFilter;
+    const list = modTakedowns.filter(t => f === "all" ? true : f === "open" ? (t.status === "open" || t.status === "info") : t.status === f);
+    list.sort((a, b) => (takedownTime(b) || 0) - (takedownTime(a) || 0));
+    const waiting = modTakedowns.filter(t => t.status === "open" || t.status === "info").length;
+    document.getElementById("td-mod-summary").textContent = `${waiting} waiting · ${takedownRemovedIds.size} game${takedownRemovedIds.size === 1 ? "" : "s"} removed by takedown · ${modTakedowns.length} request${modTakedowns.length === 1 ? "" : "s"} in total`;
+    listEl.innerHTML = list.length ? "" : `<p style="margin:0.25rem;color:var(--text-muted);font-size:13px;">Nothing here.</p>`;
+    const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+    const chip = (label, fn, primary) => { const b = el("button", "finder-chip" + (primary ? " fb-primary" : ""), label); b.type = "button"; b.onclick = fn; return b; };
+    for (const t of list) {
+        const row = el("div", "submit-review fb-review");
+        row.dataset.status = t.status;
+        const z = t.gameId && typeof zones !== "undefined" ? zones.find(x => String(x.id) === String(t.gameId)) : null;
+        const head = el("div"); head.appendChild(el("b", "", "©️ " + (t.gameName || "?") + (t.gameId ? ` (#${t.gameId})` : " (no exact match)")));
+        const d = takedownTime(t);
+        row.append(head, el("small", "", `from ${t.name}${t.org ? " · " + t.org : ""}${d ? " on " + d.toLocaleDateString() : ""}`));
+        const mail = el("small", "");
+        const a = el("a", "", t.email);
+        a.href = `mailto:${encodeURIComponent(t.email).replace(/%40/g, "@")}?subject=${encodeURIComponent("Your takedown request for " + (t.gameName || "a game") + " on GN 2.0")}`;
+        mail.append("Reply: ", a);
+        row.appendChild(mail);
+        const work = el("p", "");
+        work.append(el("b", "", "Original: "));
+        if (/^https?:\/\//i.test(t.work || "")) { const w = el("a", "", t.work); w.href = t.work; w.target = "_blank"; w.rel = "noopener noreferrer"; work.appendChild(w); }
+        else work.append(t.work || "");
+        row.appendChild(work);
+        const proof = el("p", ""); proof.append(el("b", "", "Proof: "), t.proof || ""); row.appendChild(proof);
+        if (t.details) row.appendChild(el("p", "", t.details));
+        if (t.uid) row.appendChild(el("small", "fb-ctx", "Sent while signed in to a GN 2.0 account."));
+        const status = el("small", "submit-status", (TAKEDOWN_STATUS[t.status] || t.status) + (t.reviewedBy ? ` (by ${t.reviewedBy})` : ""));
+        const note = el("input", "submit-note");
+        note.maxLength = 200; note.placeholder = "Note for other admins (optional)"; note.value = t.note || "";
+        const actions = el("div", "submit-actions");
+        const setStatus = async st => {
+            const data = { status: st, note: note.value.trim().slice(0, 200), reviewedBy: currentUsername().slice(0, 40), reviewedAt: firebase.firestore.FieldValue.serverTimestamp() };
+            await cloudDb.collection("takedowns").doc(t.id).update(data);
+            if (typeof fbCount === "function") fbCount(0, 1);
+            Object.assign(t, data);
+            updateTakedownTabCount();
+            drawModTakedowns();
+        };
+        const act = (fn, done) => async () => {
+            try { if ((await fn()) !== false && done) notify(done, { type: "success" }); }
+            catch (e) { notify("Couldn't update it: " + (e.code || e.message || e), { type: "error" }); }
+        };
+        // Pick the game by id when the name didn't match exactly
+        let idInput = null;
+        if (!t.gameId && t.status !== "removed") {
+            idInput = el("input", "submit-note");
+            idInput.placeholder = "Game id to remove (find it with the site's search)";
+            idInput.maxLength = 12;
+            row.appendChild(idInput);
+        }
+        const gameId = () => t.gameId || (idInput ? idInput.value.trim() : "");
+        if (t.status !== "removed") actions.appendChild(chip("Remove game", act(async () => {
+            const id = gameId();
+            if (!id) throw new Error("type the game's id first");
+            const g = typeof zones !== "undefined" ? zones.find(x => String(x.id) === id) : null;
+            if (!(await askConfirm(`Remove "${g ? g.name : "game #" + id}" for everyone?`, { confirmText: "Remove", danger: true }))) return false;
+            await setGameRemoved(id, true);
+            if (!t.gameId) { await cloudDb.collection("takedowns").doc(t.id).update({ gameId: id }).catch(() => {}); t.gameId = id; }
+            await setStatus("removed");
+        }, "Game removed for everyone. Let the requester know by email."), true));
+        if (t.status === "removed" && t.gameId) actions.appendChild(chip("Restore game", act(async () => {
+            if (!(await askConfirm("Put this game back on the site? Only do this if the request was withdrawn or was false.", { confirmText: "Restore" }))) return false;
+            await setGameRemoved(t.gameId, false);
+            await setStatus("restored");
+        }, "Game restored.")));
+        if (t.status !== "info" && t.status !== "removed") actions.appendChild(chip("Asked for more info", act(() => setStatus("info"))));
+        if (t.status !== "rejected" && t.status !== "removed") actions.appendChild(chip("Reject", act(() => setStatus("rejected"))));
+        if (t.status !== "open") actions.appendChild(chip("Reopen", act(() => setStatus("open"))));
+        if (z) actions.appendChild(chip("Open game", () => { closePopup(); openZone(z); }));
+        actions.appendChild(chip("Delete", act(async () => {
+            if (!(await askConfirm("Delete this request? It can't be undone. (A removed game stays removed.)", { confirmText: "Delete", danger: true }))) return false;
+            await cloudDb.collection("takedowns").doc(t.id).delete();
+            modTakedowns = modTakedowns.filter(x => x !== t);
+            updateTakedownTabCount();
+            drawModTakedowns();
+        })));
+        row.append(status, note, actions);
+        listEl.appendChild(row);
+    }
+}
+
+</script>
 <script>/* js/admin.js */
 // ═════════════════════════════════════════════════════════════════════════════
 // Admin Panel: account management for site admins.
@@ -11151,6 +11469,7 @@ async function openAdminPanel() {
         <div class="admin-tabs" role="tablist">
             <button type="button" role="tab" data-tab="accounts" aria-selected="true">Accounts</button>
             <button type="button" role="tab" data-tab="feedback" aria-selected="false">Reports &amp; ideas</button>
+            <button type="button" role="tab" data-tab="takedowns" aria-selected="false">Takedowns</button>
             <button type="button" role="tab" data-tab="submissions" aria-selected="false">Game submissions</button>
             <button type="button" role="tab" data-tab="newgames" aria-selected="false">New library games${unreviewedNewGames().length ? ` <span class="admin-tab-count">${unreviewedNewGames().length}</span>` : ""}</button>
         </div>
@@ -11171,13 +11490,16 @@ async function openAdminPanel() {
         </div>
         <div id="admin-submissions" hidden><div id="owner-submissions" class="owner-panel-list"></div></div>
         <div id="admin-newgames" hidden></div>
-        <div id="admin-feedback" hidden></div>`;
+        <div id="admin-feedback" hidden></div>
+        <div id="admin-takedowns" hidden></div>`;
     body.querySelectorAll(".admin-tabs button").forEach(b => b.onclick = () => {
         body.querySelectorAll(".admin-tabs button").forEach(x => x.setAttribute("aria-selected", x === b ? "true" : "false"));
         document.getElementById("admin-accounts").hidden = b.dataset.tab !== "accounts";
         document.getElementById("admin-submissions").hidden = b.dataset.tab !== "submissions";
         document.getElementById("admin-newgames").hidden = b.dataset.tab !== "newgames";
         document.getElementById("admin-feedback").hidden = b.dataset.tab !== "feedback";
+        document.getElementById("admin-takedowns").hidden = b.dataset.tab !== "takedowns";
+        if (b.dataset.tab === "takedowns" && typeof renderModTakedowns === "function") renderModTakedowns();
         if (b.dataset.tab === "feedback" && typeof renderModFeedback === "function") renderModFeedback();
         if (b.dataset.tab === "newgames") renderNewLibraryGames();
         if (b.dataset.tab === "submissions" && typeof renderOwnerSubmissions === "function") renderOwnerSubmissions();
@@ -11188,6 +11510,14 @@ async function openAdminPanel() {
             if (typeof fbCount === "function") fbCount(Math.max(1, snap.size), 0);
             if (!modFeedbackCache.length) modFeedbackCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             updateFeedbackTabCount();
+        }).catch(() => {});
+    }
+    // Takedown requests waiting, shown on their tab
+    if (typeof updateTakedownTabCount === "function") {
+        cloudDb.collection("takedowns").where("status", "in", ["open", "info"]).get().then(snap => {
+            if (typeof fbCount === "function") fbCount(Math.max(1, snap.size), 0);
+            if (!modTakedowns.length) modTakedowns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            updateTakedownTabCount();
         }).catch(() => {});
     }
     document.getElementById("admin-search").addEventListener("input", renderAdminList);
@@ -11718,7 +12048,7 @@ const STATUS_HEADLINES = {
     degraded: "Running with some issues",
     down: "Major outage"
 };
-const MIRROR_NAMES = { jsdelivr: "jsDelivr", github: "GitHub", githack: "githack" };
+const MIRROR_NAMES = { jsdelivr: "jsDelivr", github: "GitHub", githack: "githack", fastly: "jsDelivr (Fastly)", gcore: "jsDelivr (G-Core)", testingcf: "jsDelivr (Cloudflare)" };
 
 function getShowSiteStatus() { try { return localStorage.getItem(SHOW_STATUS_KEY) !== "false"; } catch { return true; } }
 function setShowSiteStatus(on) {
@@ -11738,12 +12068,17 @@ function collectStatusChecks() {
     const down = typeof mirrorDown !== "undefined" ? [...mirrorDown] : [];
     const listState = typeof libraryListState !== "undefined" ? libraryListState : "live";
     let lib;
+    const primary = typeof PRIMARY_MIRRORS !== "undefined" ? PRIMARY_MIRRORS : ["jsdelivr", "github", "githack"];
+    const backups = typeof BACKUP_MIRRORS !== "undefined" ? BACKUP_MIRRORS : [];
+    const mainDown = down.filter(m => primary.includes(m));
+    const backupsUp = backups.filter(m => !down.includes(m));
     if (listState === "failed") lib = { level: "down", detail: "Can't reach any game source from this network." };
-    else if (down.length >= 3) lib = { level: "degraded", detail: "All 3 game sources are having trouble, so some games or covers may not load." };
+    else if (mainDown.length >= primary.length && backupsUp.length) lib = { level: "degraded", detail: `The main game sources are blocked here, so games load from backup jsDelivr addresses.` };
+    else if (mainDown.length >= primary.length) lib = { level: "degraded", detail: "All game sources are having trouble, so some games or covers may not load." };
     else if (listState === "cache") lib = { level: "degraded", detail: "Using the game list saved on this device. Some games may not load." };
-    else if (down.length) lib = { level: "degraded", detail: `Running on backup sources (${down.map(m => MIRROR_NAMES[m] || m).join(", ")} unreachable).` };
+    else if (mainDown.length) lib = { level: "degraded", detail: `Running on backup sources (${mainDown.map(m => MIRROR_NAMES[m] || m).join(", ")} unreachable).` };
     else if (listState === "loading") lib = { level: "loading", detail: "Loading the game list…" };
-    else lib = { level: "ok", detail: "All 3 game sources working" };
+    else lib = { level: "ok", detail: `All 3 game sources working${backups.length ? `, plus ${backups.length} backups` : ""}` };
     checks.push({ name: "Game library", ...lib });
 
     const og = typeof originalsState !== "undefined" ? originalsState : "live";
