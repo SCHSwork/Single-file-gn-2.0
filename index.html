@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ 0269f0290b. -->
+<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ a58e148460. -->
 <html lang="en">
     <head>
 <script>
@@ -3149,6 +3149,12 @@ body:not(#z) .theme-button.scene-pick.active { outline: 2px solid var(--primary)
 /* Takedown form footer links */
 .td-foot a, .submit-error a { color: inherit; text-decoration: underline; }
 
+/* UBZone games: where the files come from (info panel, takedown form) */
+.td-ubzone { border: 1px solid var(--border); border-radius: 10px; padding: 0.6rem 0.75rem; background: var(--bg-secondary); font-size: 13px; }
+.td-ubzone p { margin: 0 0 0.35rem; }
+.ubzone-sources { margin: 0.25rem 0 0.6rem; padding-left: 1.2rem; font-size: 13px; word-break: break-word; }
+.ubzone-sources li { margin: 0.15rem 0; }
+
 </style>
     <meta name="theme-color" content="#fb2651">
 </head>
@@ -3193,6 +3199,7 @@ body:not(#z) .theme-button.scene-pick.active { outline: 2px solid var(--primary)
                     <option value="js13k">js13k tiny games</option>
                     <option value="wasm4">WASM-4 retro games</option>
                     <option value="partner">Partner games (may have ads)</option>
+                    <option value="ubzone">UBZone games</option>
                 </select>
                 </label>
                 <label class="filter-field"><span>Show</span>
@@ -4022,6 +4029,154 @@ document.addEventListener("DOMContentLoaded", updatePartnerToggle);
 
 </script>
 
+    <script>/* js/ubzone.js */
+// ═════════════════════════════════════════════════════════════════════════════
+// UBZone games: games from the unblockedzone site (github.com/s0n-1m-cr1n3/sc13nc3)
+// that GN 2.0 didn't already have. The list is config/ubzone-games.json.
+// Every game file was scanned before it was listed, so they load from that
+// exact checked version (the "ref" commit) and never from a newer one, the same
+// way the main library is pinned after the Oct 11 malicious-script change.
+// Left out on purpose: games with trackers, ads or hidden data calls, and games
+// that load code from repos or sites that can change at any time.
+// Ids start at 300000 so they never collide with the library, GN Originals or
+// partner games.
+// ═════════════════════════════════════════════════════════════════════════════
+const UBZONE_LIST_URL = "config/ubzone-games.json";
+const UBZONE_CACHE_KEY = "gnmath-cache-ubzone";
+const UBZONE_ID_BASE = 300000;
+const UBZONE_TAG = "ubzone";
+const UBZONE_SITE = "https://github.com/s0n-1m-cr1n3/sc13nc3";
+let ubzoneRef = null;   // the checked commit, from the list
+
+function isUbzoneZone(zoneOrId) {
+    const id = zoneOrId && typeof zoneOrId === "object" ? zoneOrId.id : zoneOrId;
+    const n = Number(id);
+    return n >= UBZONE_ID_BASE && n < UBZONE_ID_BASE + 100000;
+}
+
+function isUbzoneGhUrl(url) {
+    const g = typeof parseGhUrl === "function" && parseGhUrl(url);
+    return !!g && (g.owner + "/" + g.repo).toLowerCase() === "s0n-1m-cr1n3/sc13nc3";
+}
+
+// Other repos some games load their files from, each pinned to the commit that
+// was scanned (the list's "pins"). Links that already name an exact commit are
+// left alone; they were scanned at that commit.
+let ubzonePins = {};
+// Tracker and ad tags some game pages carry. GN 2.0 has no trackers, so these
+// are removed before the page runs. The games don't need them to play.
+const UBZONE_TRACKER_HOSTS = "(?:www\\.)?googletagmanager\\.com|(?:www\\.)?google-analytics\\.com|pagead2\\.googlesyndication\\.com|static\\.cloudflareinsights\\.com|hb-bluewizard\\.s3\\.us-east-2\\.amazonaws\\.com";
+const UBZONE_TRACKER_TAGS = new RegExp(`<(script|iframe)\\b[^>]*\\bsrc\\s*=\\s*["']https?://(?:${UBZONE_TRACKER_HOSTS})[^"']*["'][^>]*>\\s*</\\1>`, "gi");
+const UBZONE_TRACKER_INLINE = /<script\b(?![^>]*\bsrc=)[^>]*>(?:(?!<\/script>)[\s\S])*?(?:googletagmanager\.com\/gtm\.js|google-analytics\.com\/analytics\.js)(?:(?!<\/script>)[\s\S])*?<\/script>/gi;
+// Leftover gtag()/ga() calls in the games then just do nothing
+const UBZONE_TRACKER_STUB = "<script>window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){};window.ga=window.ga||function(){};<\/script>";
+
+function pinRepoLinks(html, repo, sha) {
+    const [o, r] = repo.split("/").map(s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    return html
+        // jsDelivr: gh/owner/repo/…, gh/owner/repo@main/…, @latest, @13 … (but not @<commit>)
+        .replace(new RegExp(`(https?://[a-z0-9-]*\\.?jsdelivr\\.net/gh/${o}/${r})(?:@(?![0-9a-f]{40}/)[^/\\s"'\`<>]+)?/`, "gi"), `https://cdn.jsdelivr.net/gh/${repo}@${sha}/`)
+        // GitHub / githack: owner/repo/<branch>/…
+        .replace(new RegExp(`https?://(?:raw\\.githubusercontent\\.com|rawcdn\\.githack\\.com|raw\\.githack\\.com)/${o}/${r}/(?![0-9a-f]{40}/)[^/\\s"'\`<>]+/`, "gi"), `https://cdn.jsdelivr.net/gh/${repo}@${sha}/`);
+}
+
+// Point a UBZone game page at the checked versions of everything it loads, on the
+// main jsDelivr address so the usual backups (fastly, gcore, githack) still work,
+// and take out tracker tags.
+function pinUbzoneRefs(html) {
+    if (typeof html !== "string" || !ubzoneRef) return html;
+    html = pinRepoLinks(html, "s0n-1m-cr1n3/sc13nc3", ubzoneRef);
+    for (const [repo, sha] of Object.entries(ubzonePins)) html = pinRepoLinks(html, repo, sha);
+    html = html.replace(/https?:\/\/(?:quantil|originfastly)\.jsdelivr\.net\//gi, "https://cdn.jsdelivr.net/");
+    const cleaned = html.replace(UBZONE_TRACKER_TAGS, "").replace(UBZONE_TRACKER_INLINE, "");
+    if (cleaned === html) return html;
+    return /<head\b[^>]*>/i.test(cleaned) ? cleaned.replace(/<head\b[^>]*>/i, m => m + UBZONE_TRACKER_STUB) : UBZONE_TRACKER_STUB + cleaned;
+}
+
+function toUbzoneZone(g, repo, ref) {
+    const ghUrl = path => `gh:${repo}@${ref}/${String(path).replace(/^\/+/, "")}`;
+    return {
+        id: Number(g.id),
+        name: g.name,
+        author: "unblockedzone",
+        authorLink: UBZONE_SITE,
+        url: g.path ? ghUrl(g.path) : g.link,
+        cover: g.cover ? ghUrl(g.cover) : "",
+        special: [UBZONE_TAG, ...(g.link ? ["scratch"] : [])],
+        sources: Array.isArray(g.sources) ? g.sources.filter(s => typeof s === "string").slice(0, 8) : []
+    };
+}
+
+async function loadUbzone() {
+    let data = null;
+    try {
+        const res = await fetch(UBZONE_LIST_URL + "?t=" + Math.floor(Date.now() / 600000), { cache: "no-cache" });
+        if (!res.ok) throw new Error("UBZone list " + res.status);
+        data = await res.json();
+        try { localStorage.setItem(UBZONE_CACHE_KEY, JSON.stringify({ t: Date.now(), data })); } catch (e) {}
+    } catch (err) {
+        try { data = JSON.parse(localStorage.getItem(UBZONE_CACHE_KEY))?.data; } catch (e) {}
+        if (!data) { console.warn("UBZone list unavailable", err); return []; }
+    }
+    // Only ever load the checked version: a full commit id, never a branch name
+    if (!data || !/^[0-9a-f]{40}$/.test(data.ref || "") || !/^[\w.-]+\/[\w.-]+$/.test(data.repo || "") || !Array.isArray(data.games)) return [];
+    ubzoneRef = data.ref;
+    ubzonePins = {};
+    for (const [repo, sha] of Object.entries(data.pins || {})) {
+        if (/^[\w.-]+\/[\w.-]+$/.test(repo) && /^[0-9a-f]{40}$/.test(sha)) ubzonePins[repo] = sha;
+    }
+    const safePath = p => typeof p === "string" && /^[\w./-]+$/.test(p) && !p.includes("..");
+    const safeLink = l => typeof l === "string" && /^https:\/\/scratch\.mit\.edu\/projects\/\d+\/fullscreen\/?$/.test(l);
+    return data.games
+        .filter(g => g && isUbzoneZone(g.id) && g.name && (safePath(g.path) || safeLink(g.link)) && (!g.cover || safePath(g.cover)))
+        .map(g => toUbzoneZone(g, data.repo, data.ref));
+}
+
+// Where a UBZone game's files really live: its page on unblockedzone plus every
+// repo it loads files from, each at the commit that was checked. Used by the
+// info panel, the takedown form and the admins' takedown list, so rights
+// holders can also go to the original repos.
+function ubzoneSourceLinks(zone) {
+    const out = [];
+    for (const s of (zone && zone.sources) || []) {
+        if (/^https:\/\/scratch\.mit\.edu\/projects\/\d+\/?$/.test(s)) { out.push({ url: s, label: "Scratch project " + s.match(/\d+/)[0] }); continue; }
+        const m = /^([\w.-]+)\/([\w.-]+)@([0-9a-f]{40})(?:\/([\w.\/-]*))?$/.exec(s);
+        if (!m) continue;
+        const [, owner, repo, sha, path] = m;
+        out.push({
+            url: `https://github.com/${owner}/${repo}/tree/${sha}${path ? "/" + path : ""}`,
+            label: `${owner}/${repo}${path ? "/" + path : ""}`,
+            repoUrl: `https://github.com/${owner}/${repo}`
+        });
+    }
+    return out;
+}
+// The same links as HTML (escaped), for popups
+function ubzoneSourceListHtml(zone) {
+    const esc = typeof escapeHtmlText === "function" ? escapeHtmlText : s => String(s ?? "");
+    const links = ubzoneSourceLinks(zone);
+    if (!links.length) return `<a href="${UBZONE_SITE}" target="_blank" rel="noopener">${UBZONE_SITE.replace("https://", "")}</a>`;
+    return `<ul class="ubzone-sources">${links.map(l => `<li><a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label)}</a>${l.repoUrl ? ` · <a href="${esc(l.repoUrl)}/issues" target="_blank" rel="noopener noreferrer">issues</a>` : ""}</li>`).join("")}</ul>`;
+}
+
+// Game info panel for a UBZone game
+function showUbzoneInfo(zone) {
+    const body = document.getElementById("popupBody");
+    document.getElementById("popupTitle").textContent = `${zone.name} Info`;
+    const esc = typeof escapeHtmlText === "function" ? escapeHtmlText : s => String(s ?? "");
+    const scratch = zone.url.startsWith("https://scratch.mit.edu/");
+    body.innerHTML = `
+        <p>
+        <b>From</b>: <a href="${UBZONE_SITE}" target="_blank" rel="noopener">unblockedzone</a><br>
+        ${scratch ? `<b>Plays on</b>: <a href="${esc(zone.url)}" target="_blank" rel="noopener">Scratch</a> (opens in a new tab)<br>` : ""}
+        ${ubzoneRef && !scratch ? `<b>Version</b>: <code>${esc(ubzoneRef.slice(0, 7))}</code> (checked October 17, 2026)<br>` : ""}
+        </p>
+        <p style="margin-bottom:0.25rem;"><b>Original files</b> (the version GN 2.0 loads):</p>
+        ${ubzoneSourceListHtml(zone)}
+        <p style="color:var(--text-muted);font-size:13px;">This game comes from the unblockedzone collection. Its files were checked for trackers, ads and hidden scripts before it was added, and it always loads that checked version. All credit goes to the game's creators. Own this game? <a href="#" onclick="openTakedownForm(zones.find(z => z.id === ${Number(zone.id)})); return false;">Send a takedown request</a>.</p>`;
+}
+
+</script>
     <script>/* js/app.js */
 const container = document.getElementById('container');
 const zoneViewer = document.getElementById('zoneViewer');
@@ -4283,6 +4438,7 @@ const TYPE_LABELS = { port: "Ports", flash: "Flash", emulator: "Emulator", fnf: 
 async function listZones() {
     const originalsPromise = typeof loadOriginals === "function" ? loadOriginals() : Promise.resolve([]);
     const partnersPromise = typeof loadPartners === "function" ? loadPartners().catch(() => []) : Promise.resolve([]);
+    const ubzonePromise = typeof loadUbzone === "function" ? loadUbzone().catch(() => []) : Promise.resolve([]);
     try {
       // Look up the latest commit SHA so jsDelivr serves a fresh zones.json.
       // sha.txt on raw.githubusercontent.com has no per-IP rate limit, so try it
@@ -4328,6 +4484,8 @@ async function listZones() {
         // GN Originals already have are marked "libraryDuplicate" in their list.
         const partners = await partnersPromise;
         zones = zones.concat(partners.filter(z => !libraryIds.has(String(z.id)) && !z.libraryDuplicate));
+        // UBZone games (checked games from the unblockedzone site that weren't here yet)
+        zones = zones.concat((await ubzonePromise).filter(z => !libraryIds.has(String(z.id))));
         if (typeof applyJamPreference === "function") zones = applyJamPreference(zones);
         // Show games right away using cached play counts, then refresh them
         const popularityFresh = loadCachedPopularity();
@@ -4390,7 +4548,7 @@ async function listZones() {
     } catch (error) {
         console.error(error);
         // The main library is down, but the GN Originals may still work
-        const originals = (await originalsPromise).concat(await partnersPromise);
+        const originals = (await originalsPromise).concat(await partnersPromise, await ubzonePromise);
         if (originals.length) {
             zones = typeof applyJamPreference === "function" ? applyJamPreference(originals) : originals;
             sortZones();
@@ -4850,7 +5008,12 @@ function cleanGameHtml(html) {
 
 async function fetchWithFallback(rawUrl) {
     // GN Originals: "gh:owner/repo@sha/path"
-    if (typeof parseGhUrl === "function" && parseGhUrl(rawUrl)) return rewriteForMirrors(await fetchOriginalHtml(rawUrl));
+    if (typeof parseGhUrl === "function" && parseGhUrl(rawUrl)) {
+        let html = await fetchOriginalHtml(rawUrl);
+        // UBZone games: keep their own links on the checked version (ubzone.js)
+        if (typeof isUbzoneGhUrl === "function" && isUbzoneGhUrl(rawUrl)) html = pinUbzoneRefs(html);
+        return rewriteForMirrors(html);
+    }
     // Game pages: try every source (jsDelivr, GitHub, githack), working ones first
     const suffix = rawUrl.replace("{HTML_URL}", "").replace("{COVER_URL}", "").replace(/^\//, "");
     const isHtml = rawUrl.includes("{HTML_URL}");
@@ -7666,6 +7829,14 @@ function loadDMCA() {
                 <b>Partner games</b> (marked AD) aren't copied here at all; they're linked from html5games.com or Playgama and
                 play from their servers. To have one removed from this list, use the takedown request.
             </p>
+            <p>
+                <b>UBZone games</b> come from the unblockedzone collection
+                (<a href="https://github.com/s0n-1m-cr1n3/sc13nc3" target="_blank" rel="noopener">github.com/s0n-1m-cr1n3/sc13nc3</a>)
+                and the GitHub repos it uses. GN 2.0 doesn't host their files; it loads them from those repos.
+                Use the takedown request to have one removed from GN 2.0. The form, and each game's Info panel,
+                lists the exact repos its files come from, so you can contact them or send
+                <a href="https://github.com/contact/dmca" target="_blank" rel="noopener noreferrer">GitHub a DMCA notice</a> to have the files themselves taken down.
+            </p>
             <p style="font-size:13px;color:var(--text-muted);">
                 Game names, pictures and trademarks belong to their owners. GN 2.0 isn't affiliated with or endorsed by them.
                 See the <a href="#" onclick="loadTerms(); return false;">Terms</a>.
@@ -7753,6 +7924,8 @@ function showZoneInfo() {
     if (original) { showOriginalInfo(original); return; }
     const partner = typeof isPartnerZone === "function" && isPartnerZone(id) ? zones.find(z => Number(z.id) === id) : null;
     if (partner) { showPartnerInfo(partner); return; }
+    const ubz = typeof isUbzoneZone === "function" && isUbzoneZone(id) ? zones.find(z => Number(z.id) === id) : null;
+    if (ubz) { showUbzoneInfo(ubz); return; }
     fetch(`https://api.github.com/repos/freebuisness/html/commits?path=${id}.html`).then(res => res.json()).then(async json => {
         let stats = await getStats (id);
         idjson = zones.filter(a=>a.id===id)[0]
@@ -9715,6 +9888,7 @@ function zoneGenres(zone) {
 }
 function zoneSource(zone) {
     if (typeof isPartnerZone === "function" && isPartnerZone(zone)) return "partner";
+    if (typeof isUbzoneZone === "function" && isUbzoneZone(zone)) return "ubzone";
     if (typeof isOriginalZone === "function" && isOriginalZone(zone)) {
         const sp = zone.special || [];
         return sp.includes("js13k") ? "js13k" : sp.includes("wasm4") ? "wasm4" : "originals";
@@ -9772,7 +9946,7 @@ function updateFilterCounts() {
     const srcSel = document.getElementById("sourceOptions");
     if (srcSel) {
         const count = s => visible.filter(z => zoneSource(z) === s).length;
-        const labels = { all: `All sources (${visible.length})`, library: `Main library (${count("library")})`, originals: `GN Originals (${count("originals")})`, js13k: `js13k tiny games (${count("js13k")})`, wasm4: `WASM-4 retro games (${count("wasm4")})`, partner: `Partner games, may have ads (${count("partner")})` };
+        const labels = { all: `All sources (${visible.length})`, library: `Main library (${count("library")})`, originals: `GN Originals (${count("originals")})`, js13k: `js13k tiny games (${count("js13k")})`, wasm4: `WASM-4 retro games (${count("wasm4")})`, partner: `Partner games, may have ads (${count("partner")})`, ubzone: `UBZone games (${count("ubzone")})` };
         for (const o of srcSel.options) if (labels[o.value]) o.textContent = labels[o.value];
     }
 }
@@ -11146,6 +11320,7 @@ function openTakedownForm(zone = null) {
             ${field("Email for replies *", `<input id="td-email" type="email" maxlength="120" required placeholder="you@example.com">`, "Only the admins can see this. We'll use it only about this request.")}
             ${field("Company or studio", `<input id="td-org" maxlength="120" placeholder="Optional">`)}
             ${field("Game on this site *", `<input id="td-game" maxlength="80" list="td-game-list" required placeholder="Start typing the game's name" value="${zone ? escapeHtmlText(zone.name) : ""}"><datalist id="td-game-list"></datalist>`)}
+            <div id="td-ubzone" class="td-ubzone" hidden></div>
             ${field("Your original game *", `<input id="td-work" maxlength="300" required placeholder="Link to the official page, store page or website">`)}
             ${field("How can we confirm you own it? *", `<textarea id="td-proof" maxlength="500" rows="3" required placeholder="e.g. email from the domain on the official site, a link to your developer account, or the store page that lists you as the publisher"></textarea>`)}
             ${field("Anything else", `<textarea id="td-details" maxlength="1000" rows="2" placeholder="Optional"></textarea>`)}
@@ -11162,6 +11337,20 @@ function openTakedownForm(zone = null) {
         const hits = q.length < 2 || typeof zones === "undefined" ? [] : zones.filter(z => z.name.toLowerCase().includes(q)).slice(0, 15);
         list.innerHTML = hits.map(z => `<option value="${escapeHtmlText(z.name)}">`).join("");
     });
+    // UBZone games are copies of files in other people's GitHub repos: show
+    // those repos so the owner can go to the source too.
+    const ubBox = body.querySelector("#td-ubzone");
+    const showUbzoneSource = () => {
+        if (!ubBox) return;
+        const q = input.value.trim().toLowerCase();
+        const g = zone && zone.name.toLowerCase() === q ? zone : (typeof zones !== "undefined" ? zones.find(z => z.name.toLowerCase() === q) : null);
+        const isUb = g && typeof isUbzoneZone === "function" && isUbzoneZone(g);
+        ubBox.hidden = !isUb;
+        ubBox.innerHTML = isUb ? `<p><b>Where this copy comes from.</b> GN 2.0 loads this game from these GitHub repos (from the unblockedzone collection). Your request here removes it from GN 2.0; to have the files themselves taken down, contact those repos too or send GitHub a DMCA notice at <a href="https://github.com/contact/dmca" target="_blank" rel="noopener noreferrer">github.com/contact/dmca</a>.</p>${ubzoneSourceListHtml(g)}` : "";
+    };
+    input.addEventListener("input", showUbzoneSource);
+    input.addEventListener("change", showUbzoneSource);
+    showUbzoneSource();
     body.querySelector("#td-form").onsubmit = e => { e.preventDefault(); sendTakedown(zone); };
     document.getElementById("popupOverlay").style.display = "flex";
     setTimeout(() => body.querySelector("#td-name")?.focus(), 50);
@@ -11292,6 +11481,17 @@ function drawModTakedowns() {
         row.appendChild(work);
         const proof = el("p", ""); proof.append(el("b", "", "Proof: "), t.proof || ""); row.appendChild(proof);
         if (t.details) row.appendChild(el("p", "", t.details));
+        // UBZone games: link the repos the files really come from
+        if (z && typeof isUbzoneZone === "function" && isUbzoneZone(z)) {
+            const src = el("p", "");
+            src.append(el("b", "", "Files from: "));
+            ubzoneSourceLinks(z).forEach((l, i) => {
+                if (i) src.append(", ");
+                const a = el("a", "", l.label); a.href = l.url; a.target = "_blank"; a.rel = "noopener noreferrer"; src.appendChild(a);
+            });
+            src.append(" (UBZone game; tell the requester they can also contact these repos or GitHub)");
+            row.appendChild(src);
+        }
         if (t.uid) row.appendChild(el("small", "fb-ctx", "Sent while signed in to a GN 2.0 account."));
         const status = el("small", "submit-status", (TAKEDOWN_STATUS[t.status] || t.status) + (t.reviewedBy ? ` (by ${t.reviewedBy})` : ""));
         const note = el("input", "submit-note");
