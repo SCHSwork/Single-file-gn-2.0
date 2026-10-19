@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ 93b0841f42. -->
+<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ 5346f1d789. -->
 <html lang="en">
     <head>
 <script>
@@ -1542,17 +1542,16 @@ body.reduced-motion *, body.reduced-motion *::before, body.reduced-motion *::aft
     transform: translateY(-1px);
 }
 
+/* The footer sits at the end of the page (not pinned to the screen, where it
+   would cover games on phones). Its bar gives the links a solid background in
+   every theme, scene and site style. */
 footer {
     background: var(--bg-secondary);
     border-top: 1px solid var(--border);
-    padding: 1rem 1rem;
+    padding: 1rem 1rem 4.5rem;   /* room for the status light and scroll button */
     text-align: center;
-
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    z-index: 100;
+    position: relative;
+    z-index: 1;
 }
 
 .footer-links {
@@ -1563,7 +1562,7 @@ footer {
 }
 
 .footer-links a {
-    color: var(--accent-text);
+    color: var(--text);   /* the theme's main text color always contrasts with the footer bar */
     text-decoration: none;
     font-weight: 600;
     font-size: 15px;
@@ -3306,7 +3305,7 @@ body.st-aero:not(#z) #searchBar { border-radius: 999px; }
 body.st-aero:not(#z) #searchBar:focus { box-shadow: inset 0 2px 5px rgba(0,60,120,.18), 0 0 0 3px rgba(120,220,255,.75), 0 0 14px rgba(120,220,255,.7) !important; }
 body.st-aero:not(#z) :is(#searchBar, input, textarea)::placeholder { color: #3f6283; }
 body.st-aero:not(#z) .popup-header { background: var(--gloss-soft), linear-gradient(180deg, #2a9cec, #0662bf) !important; color: #fff !important; }
-body.st-aero:not(#z) footer { background: var(--gloss-soft), linear-gradient(180deg, rgba(60,175,60,.85), rgba(25,120,30,.9)) !important; backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,.7); color: #fff; }
+body.st-aero:not(#z) footer { background: var(--gloss-soft), rgba(240,250,255,.88) !important; backdrop-filter: blur(14px) saturate(1.4); border-top: 1px solid #fff; color: #08284a; }
 
 /* ── Neon sign: glowing tubes on dark brick ── */
 body.st-neon:not(#z) {
@@ -3390,6 +3389,324 @@ body.st-lcd:not(#z) footer { background: #c9c6bf !important; border-top: 6px sol
 .skin-prev-aero .skin-art { background: radial-gradient(ellipse 70% 40% at 25% 115%, #7ee04a 0 60%, #2a9a2c 72%, transparent 73%), radial-gradient(ellipse 60% 36% at 90% 120%, #a6f070 0 60%, #34a834 72%, transparent 73%), radial-gradient(circle at 85% 20%, #fff 0 5%, transparent 22%), linear-gradient(180deg, #0b6fd8, #7cc8f8); } .skin-prev-aero i:nth-child(1) { background: linear-gradient(180deg, rgba(255,255,255,.5) 0 45%, transparent 50%), linear-gradient(180deg, #1f8fe6, #0662bf); } .skin-prev-aero i:nth-child(n+2) { background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.45)); border: 1px solid #fff; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,60,120,.3); }
 .skin-prev-neon .skin-art { background: #1a0f14; } .skin-prev-neon i:nth-child(1) { background: #0e060a; border-bottom: 1px solid #ff3ea5; box-shadow: 0 0 6px #ff3ea5; } .skin-prev-neon i:nth-child(2) { border: 1.5px solid #3ef0ff; border-radius: 5px; box-shadow: 0 0 6px #3ef0ff; } .skin-prev-neon i:nth-child(3) { border: 1.5px solid #ff3ea5; border-radius: 5px; box-shadow: 0 0 6px #ff3ea5; }
 .skin-prev-lcd .skin-art { background: #9bbc0f; } .skin-prev-lcd i:nth-child(1) { background: #c9c6bf; border-bottom: 2px solid #8f8c84; } .skin-prev-lcd i:nth-child(n+2) { background: #8bac0f; border: 2px solid #0f380f; box-shadow: 2px 2px 0 #306230; }
+
+/* ── Scroll button (bottom right): to the bottom, or back to the top once there ── */
+#scrollJump {
+    position: fixed; right: 16px; bottom: 16px; z-index: 900;
+    width: 44px; height: 44px; border-radius: 50%;
+    display: grid; place-items: center; cursor: pointer;
+    background: var(--surface); color: var(--text); border: 1px solid var(--border);
+    box-shadow: var(--shadow); opacity: .9;
+    transition: opacity .2s ease, transform .2s ease;
+}
+#scrollJump:hover { opacity: 1; transform: translateY(-2px); }
+#scrollJump:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+#scrollJump svg { width: 22px; height: 22px; transition: transform .25s ease; }
+#scrollJump.up svg { transform: rotate(180deg); }
+#scrollJump[hidden] { display: none; }
+body.reduced-motion #scrollJump, body.reduced-motion #scrollJump svg { transition: none; }
+body:has(#zoneViewer[style*="flex"]) #scrollJump { display: none; }
+/* Frutiger Aero: a glossy bubble */
+body.st-aero:not(#z) #scrollJump { background: var(--gloss), linear-gradient(180deg, rgba(225,246,255,.95), rgba(120,195,245,.9)); color: #08284a; border: 1px solid #fff; }
+body.st-aero:not(#z) footer { box-shadow: 0 -4px 18px rgba(0,40,20,.25); }
+
+/* Full-look styles hide the scene, so their footer uses their own colors (not a scene's footer bar) */
+:is(body.st-paper, body.st-comic, body.st-pixel, body.st-bold):not(#z) footer { background: var(--bg-secondary) !important; border-top: 2px solid var(--border); }
+body.st-comic:not(#z) footer { border-top: 3px solid #111; }
+
+/* ═════════════════════════════════════════════════════════════════════════
+   Dock: a slim colored top bar with a pixel logo, a dark desktop, and a dock
+   of section buttons along the bottom with a clock (js/skins.js builds it).
+   ═════════════════════════════════════════════════════════════════════════ */
+body.st-dock:not(#z) #scene { display: none !important; }
+body.st-dock:not(#z) {
+    --primary: #ef5a73; --primary-hover: #f47c90; --primary-light: rgba(239,90,115,.16); --primary-lighter: rgba(239,90,115,.08);
+    --text: #e8ebf2; --text-muted: #a3acbd; --text-light: #8a94a8; --accent-text: #f58ea0;
+    --bg: #121722; --bg-secondary: #1a2130; --surface: #1c2433; --surface-hover: #232d40; --border: #2b3549; --border-light: #232c3e;
+    --glass: #1a2130; --gradient-surface: #1c2433; --gradient-primary: linear-gradient(90deg, #e94a66, #ef5f78);
+    --shadow-sm: 0 2px 8px rgba(0,0,0,.3); --shadow: 0 6px 18px rgba(0,0,0,.35); --shadow-lg: 0 10px 28px rgba(0,0,0,.4); --shadow-xl: 0 14px 36px rgba(0,0,0,.45);
+    --radius: 12px; --radius-sm: 9px; --radius-lg: 14px; --radius-xl: 18px;
+    --dock-h: 78px;
+    /* faint cube outlines scattered over a dark desktop */
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='420'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.06' stroke-width='2' stroke-linejoin='round'%3E%3Cg transform='translate(70 60) rotate(-12)'%3E%3Cpath d='M0 14 L24 0 L48 14 L24 28 Z M0 14 V42 L24 56 V28 M48 14 V42 L24 56'/%3E%3C/g%3E%3Cg transform='translate(380 250) rotate(18)'%3E%3Cpath d='M0 14 L24 0 L48 14 L24 28 Z M0 14 V42 L24 56 V28 M48 14 V42 L24 56'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") 0 0 / 520px 420px,
+        radial-gradient(ellipse 60% 50% at 50% 0%, #1b2233, transparent 70%),
+        #121722 !important;
+    background-attachment: fixed !important; color: var(--text);
+    padding-bottom: calc(var(--dock-h) + 24px);
+}
+body.st-dock:not(#z) header { background: linear-gradient(90deg, #e94a66, #ef5f78) !important; box-shadow: 0 2px 14px rgba(0,0,0,.35) !important; backdrop-filter: none; }
+/* the normal GN 2.0 logo, white on the coral bar */
+body.st-dock:not(#z) .logo { color: #fff; -webkit-text-fill-color: #fff; background: none; text-shadow: 0 1px 2px rgba(120,20,40,.35); }
+/* The dock takes over the header buttons; only panic stays up top (it must always be one click away) */
+body.st-dock:not(#z) header .control-button:not(#panicButton) { display: none !important; }
+body.st-dock:not(#z) #panicButton { background: rgba(255,255,255,.14) !important; border: 1px solid rgba(255,255,255,.55) !important; border-radius: 10px !important; color: #fff !important; box-shadow: none !important; }
+body.st-dock:not(#z) #searchBar, body.st-dock:not(#z) #searchBar:focus { background: rgba(255,255,255,.95) !important; color: #1c2433 !important; border: 0 !important; caret-color: #e94a66; }
+body.st-dock:not(#z) #searchBar::placeholder { color: #5b6478; }
+body.st-dock:not(#z) #searchBar:focus { box-shadow: 0 0 0 3px rgba(255,255,255,.45) !important; }
+body.st-dock:not(#z) header .filter-button { background: rgba(255,255,255,.14) !important; color: #fff !important; border: 1px solid rgba(255,255,255,.5) !important; }
+body.st-dock:not(#z) :is(.zone-item, #gotd, .settings-section, .filter-menu) { background: #1c2433 !important; border: 1px solid #2b3549 !important; box-shadow: 0 4px 14px rgba(0,0,0,.3) !important; }
+body.st-dock:not(#z) :is(.popup, .status-panel, .toast) { background: #1a2130 !important; border: 1px solid #2b3549 !important; }
+body.st-dock:not(#z) .zone-item:hover { border-color: #ef5a73 !important; transform: translateY(-3px); }
+body.st-dock:not(#z) .zone-item button { color: #e8ebf2; }
+body.st-dock:not(#z) .section-title { color: #f2f4f8; }
+body.st-dock:not(#z) :is(.settings-button, #gotd .gotd-play) { background: #ef5a73 !important; color: #fff !important; border: 0 !important; box-shadow: none !important; }
+body.st-dock:not(#z) :is(.theme-button:not(.scene-pick), .finder-chip, .filter-button:not(header .filter-button), .control-button:not(header .control-button)) { background: #232d40 !important; color: #e8ebf2 !important; border: 1px solid #2b3549 !important; }
+body.st-dock:not(#z) :is(input, select, textarea, .set-search):not(#searchBar) { background: #121722 !important; color: #e8ebf2 !important; border: 1px solid #2b3549 !important; }
+body.st-dock:not(#z) .popup-header { background: linear-gradient(90deg, #e94a66, #ef5f78) !important; color: #fff !important; }
+body.st-dock:not(#z) footer { background: #161c29 !important; border-top: 1px solid #2b3549; }
+/* the scroll button sits above the dock; the status light lives inside it, by the clock */
+body.st-dock:not(#z) #scrollJump { bottom: calc(var(--dock-h) + 22px); }
+#gnDock #siteStatus { position: relative; left: auto; bottom: auto !important; flex: none; margin-left: 8px; z-index: 1; }
+#gnDock #siteStatus .status-pill { background: #232d40; border-color: #2b3549; color: #e8ebf2; opacity: 1; }
+#gnDock #siteStatus .status-panel { left: auto; right: 0; bottom: calc(100% + 18px); max-height: calc(100vh - var(--dock-h) - 60px); overflow-y: auto; }
+
+/* the dock itself */
+#gnDock { display: none; }
+body.st-dock:not(#z) #gnDock {
+    display: flex; align-items: center; gap: 4px;
+    position: fixed; left: 12px; right: 12px; bottom: 10px; z-index: 950; height: var(--dock-h);
+    padding: 0 14px; border-radius: 18px;
+    background: rgba(28,36,51,.94); border: 1px solid #2b3549; box-shadow: 0 10px 30px rgba(0,0,0,.45);
+    backdrop-filter: blur(12px);
+}
+body.st-dock:has(#zoneViewer[style*="flex"]) #gnDock { display: none !important; }
+#gnDock .dock-home { display: grid; place-items: center; width: 48px; height: 48px; flex: none; border-radius: 12px; border: 0; cursor: pointer;
+    background: linear-gradient(135deg, #f0607a, #e23d5b); color: #fff; font-family: inherit; font-size: 17px; font-weight: 800; letter-spacing: -.02em; box-shadow: 0 4px 12px rgba(233,74,102,.4); }
+#gnDock .dock-sep { width: 1px; height: 34px; background: #2b3549; margin: 0 10px; flex: none; }
+#gnDock .dock-items { display: flex; gap: 2px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+#gnDock .dock-items::-webkit-scrollbar { display: none; }
+#gnDock .dock-item { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; flex: none;
+    width: 70px; height: 58px; border-radius: 12px; border: 0; background: transparent; color: #a3acbd; cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 500; line-height: 1.1; text-align: center; }
+#gnDock .dock-item svg { width: 21px; height: 21px; }
+#gnDock .dock-item:hover { background: #232d40; color: #e8ebf2; }
+#gnDock .dock-item:focus-visible { outline: 2px solid #ef5a73; outline-offset: 1px; }
+#gnDock .dock-item.active { background: rgba(239,90,115,.14); color: #f58ea0; }
+#gnDock .dock-item.active::after { content: ""; position: absolute; bottom: 3px; left: 50%; width: 18px; height: 3px; margin-left: -9px; border-radius: 3px; background: #ef5a73; }
+#gnDock .dock-item[hidden] { display: none; }
+#gnDock .dock-clock { flex: none; text-align: right; color: #e8ebf2; line-height: 1.25; margin-left: 10px; font-variant-numeric: tabular-nums; }
+#gnDock .dock-clock b { display: block; font-size: 17px; font-weight: 600; }
+#gnDock .dock-clock span { font-size: 13px; color: #c3cad8; }
+@media (max-width: 760px) {
+    body.st-dock:not(#z) { --dock-h: 64px; }
+    body.st-dock:not(#z) #gnDock { left: 6px; right: 6px; bottom: 6px; padding: 0 8px; border-radius: 16px; }
+    #gnDock .dock-clock, #gnDock .dock-sep { display: none; }
+    #gnDock .dock-home { width: 40px; height: 40px; font-size: 15px; margin-right: 6px; }
+    #gnDock .dock-item { width: 47px; height: 52px; font-size: 9px; gap: 4px; }
+    #gnDock { gap: 2px; }
+    #gnDock .dock-item[data-dock="search"] { display: none; }   /* search is right at the top on phones */
+    #gnDock .dock-items { justify-content: space-between; }
+    /* just the colored dot on phones; tap it for the details */
+    #gnDock #siteStatus .status-pill { padding: .55rem; gap: 0; }
+    #gnDock #siteStatus :is(.status-text, .status-online) { display: none; }
+    #gnDock .dock-item svg { width: 19px; height: 19px; }
+}
+.skin-prev-dock .skin-art { background: #121722; } .skin-prev-dock i:nth-child(1) { background: linear-gradient(90deg, #e94a66, #ef5f78); } .skin-prev-dock i:nth-child(2) { background: #1c2433; border: 1px solid #2b3549; border-radius: 4px; } .skin-prev-dock i:nth-child(3) { left: 4px; right: 4px; top: auto; bottom: 3px; width: auto; height: 8px; background: #1c2433; border: 1px solid #2b3549; border-radius: 4px; }
+
+/* ═════════════════════════════════════════════════════════════════════════
+   More site styles: Sci-fi HUD, Candy, Fantasy quest, Web 1999, Spreadsheet.
+   Full looks: own colors, scene hidden, inputs forced readable (incl. :focus).
+   Fonts: Orbitron and Fredoka (SIL OFL 1.1, assets/fonts/).
+   ═════════════════════════════════════════════════════════════════════════ */
+@font-face { font-family: "GN HUD"; src: url("../assets/fonts/orbitron.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "GN Candy"; src: url("../assets/fonts/fredoka.woff2") format("woff2"); font-display: swap; }
+:is(body.st-hud, body.st-candy, body.st-quest, body.st-web99, body.st-sheet):not(#z) #scene { display: none !important; }
+:is(body.st-hud, body.st-candy, body.st-quest, body.st-web99, body.st-sheet):not(#z) .logo { -webkit-text-fill-color: currentColor; -webkit-background-clip: border-box; background-clip: border-box; background: none; }
+:is(body.st-hud, body.st-candy, body.st-quest, body.st-web99, body.st-sheet):not(#z) .zone-item::before { display: none; }
+:is(body.st-hud, body.st-candy, body.st-quest, body.st-web99, body.st-sheet):not(#z) :is(#searchBar, input, select, textarea, button) { font-family: inherit; }
+
+/* ── Sci-fi HUD: a ship's console. Panels with cut corners, cyan lines, brackets ── */
+body.st-hud:not(#z) {
+    --primary: #36e3ff; --primary-hover: #8af0ff; --primary-light: rgba(54,227,255,.14); --primary-lighter: rgba(54,227,255,.07);
+    --text: #d9f6ff; --text-muted: #8fb9c8; --text-light: #7aa6b6; --accent-text: #36e3ff;
+    --bg: #050b14; --bg-secondary: #08131f; --surface: #0a1826; --surface-hover: #0f2234; --border: rgba(54,227,255,.45); --border-light: rgba(54,227,255,.2);
+    --glass: #08131f; --gradient-surface: #0a1826; --gradient-primary: #08131f;
+    --shadow-sm: none; --shadow: none; --shadow-lg: none; --shadow-xl: none;
+    --radius: 0; --radius-sm: 0; --radius-lg: 0; --radius-xl: 0;
+    --cut: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+    --cut-sm: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+    font-family: "Segoe UI", system-ui, sans-serif; letter-spacing: .02em;
+    background:
+        linear-gradient(rgba(54,227,255,.05) 1px, transparent 1px) 0 0 / 100% 4px,
+        radial-gradient(ellipse 70% 50% at 50% 0%, rgba(54,227,255,.12), transparent 70%),
+        radial-gradient(circle at 50% 120%, rgba(54,120,255,.12), transparent 50%),
+        #050b14 !important;
+    background-attachment: fixed !important; color: var(--text);
+}
+body.st-hud:not(#z) header { background: rgba(5,11,20,.92) !important; border-bottom: 1px solid rgba(54,227,255,.6); box-shadow: 0 0 22px rgba(54,227,255,.18) !important; }
+body.st-hud:not(#z) .logo { font-family: "GN HUD", "Segoe UI", sans-serif; font-weight: 700; color: #d9f6ff; letter-spacing: .14em; text-shadow: 0 0 10px rgba(54,227,255,.7); }
+body.st-hud:not(#z) :is(.zone-item, #gotd, .settings-section, .filter-menu) {
+    background: linear-gradient(#36e3ff, #36e3ff) 0 0 / 16px 2px no-repeat, linear-gradient(#36e3ff, #36e3ff) 0 0 / 2px 16px no-repeat,
+                linear-gradient(#36e3ff, #36e3ff) 100% 100% / 16px 2px no-repeat, linear-gradient(#36e3ff, #36e3ff) 100% 100% / 2px 16px no-repeat,
+                linear-gradient(180deg, rgba(14,34,52,.92), rgba(8,19,31,.92)) !important;
+    border: 1px solid rgba(54,227,255,.35) !important; box-shadow: none !important; clip-path: var(--cut); }
+body.st-hud:not(#z) :is(.popup, .status-panel, .toast) { background: #08131f !important; border: 1px solid rgba(54,227,255,.6) !important; box-shadow: 0 0 30px rgba(54,227,255,.2) !important; }
+body.st-hud:not(#z) .zone-item:hover { border-color: #36e3ff !important; background-color: #0f2234 !important; transform: translateY(-2px); filter: drop-shadow(0 0 10px rgba(54,227,255,.35)); }
+body.st-hud:not(#z) .zone-item img { filter: saturate(.9) contrast(1.05); }
+body.st-hud:not(#z) .zone-item button { color: #d9f6ff; }
+body.st-hud:not(#z) .section-title { font-family: "GN HUD", "Segoe UI", sans-serif; color: #d9f6ff; letter-spacing: .12em; text-transform: uppercase; font-size: 1.05rem; }
+body.st-hud:not(#z) .section-title::before { content: "//"; color: #36e3ff; margin-right: .3rem; }
+body.st-hud:not(#z) :is(.settings-button, #gotd .gotd-play) { background: #36e3ff !important; color: #04121c !important; border: 0 !important; border-radius: 0 !important; box-shadow: 0 0 14px rgba(54,227,255,.45) !important; clip-path: var(--cut-sm); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+body.st-hud:not(#z) :is(.theme-button:not(.scene-pick), .finder-chip, .filter-button, .control-button) { background: rgba(54,227,255,.06) !important; color: #d9f6ff !important; border: 1px solid rgba(54,227,255,.6) !important; border-radius: 0 !important; box-shadow: none !important; clip-path: var(--cut-sm); }
+body.st-hud:not(#z) .control-button .control-icon { color: #36e3ff; }
+body.st-hud:not(#z) :is(#searchBar, #searchBar:focus, input, select, textarea, .set-search) { background: rgba(4,12,20,.95) !important; color: #d9f6ff !important; border: 1px solid rgba(54,227,255,.6) !important; border-radius: 0 !important; caret-color: #36e3ff; box-shadow: none !important; }
+body.st-hud:not(#z) #searchBar:focus { border-color: #36e3ff !important; box-shadow: 0 0 12px rgba(54,227,255,.4) !important; }
+body.st-hud:not(#z) :is(#searchBar, input, textarea)::placeholder { color: #7aa6b6; }
+body.st-hud:not(#z) .popup-header { background: #0a1826 !important; border-bottom: 1px solid rgba(54,227,255,.6); color: #d9f6ff; font-family: "GN HUD", sans-serif; letter-spacing: .06em; }
+body.st-hud:not(#z) footer { background: rgba(5,11,20,.95) !important; border-top: 1px solid rgba(54,227,255,.5); }
+
+/* ── Candy: pastel sprinkles, extra-round cards, squishy jelly buttons ── */
+body.st-candy:not(#z) {
+    --primary: #ff5fa2; --primary-hover: #ff3d8b; --primary-light: rgba(255,95,162,.16); --primary-lighter: rgba(255,95,162,.08);
+    --text: #5a2546; --text-muted: #8a4f73; --text-light: #8a4f73; --accent-text: #c4185f;
+    --bg: #ffe6f2; --bg-secondary: #fff5fa; --surface: #ffffff; --surface-hover: #fff0f7; --border: #ffc2dd; --border-light: #ffd9ea;
+    --glass: #ffffff; --gradient-surface: #ffffff; --gradient-primary: linear-gradient(90deg, #ff8ac0, #b48cff);
+    --shadow-sm: 0 4px 0 #ffc2dd; --shadow: 0 6px 0 #ffb3d4; --shadow-lg: 0 8px 0 #ffb3d4; --shadow-xl: 0 10px 0 #ffa6cc;
+    --radius: 22px; --radius-sm: 16px; --radius-lg: 26px; --radius-xl: 32px;
+    font-family: "GN Candy", "Trebuchet MS", sans-serif;
+    /* sprinkles */
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cg stroke-width='5' stroke-linecap='round'%3E%3Cpath d='M20 30l10 6' stroke='%23ff8ac0'/%3E%3Cpath d='M90 20l-4 11' stroke='%2391e3ff'/%3E%3Cpath d='M150 45l11 2' stroke='%23ffd36e'/%3E%3Cpath d='M40 100l3 11' stroke='%23b48cff'/%3E%3Cpath d='M120 95l9-7' stroke='%237ee0a8'/%3E%3Cpath d='M70 150l11 4' stroke='%23ff9f7a'/%3E%3Cpath d='M160 140l-6 9' stroke='%23ff8ac0'/%3E%3Cpath d='M10 165l8-8' stroke='%2391e3ff'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 180px 180px,
+        linear-gradient(180deg, #ffe6f2, #f3e8ff) !important;
+    background-attachment: fixed !important; color: var(--text);
+}
+body.st-candy:not(#z) header { background: linear-gradient(90deg, #ff8ac0, #c79bff) !important; border-bottom: 0; box-shadow: 0 6px 0 rgba(199,155,255,.45) !important; }
+body.st-candy:not(#z) .logo { color: #fff; font-weight: 600; font-size: 2rem; text-shadow: 0 3px 0 #e0559a, 0 6px 10px rgba(160,40,110,.25); }
+body.st-candy:not(#z) :is(.zone-item, #gotd, .settings-section, .filter-menu) { background: #fff !important; border: 3px solid #ffc2dd !important; box-shadow: 0 6px 0 #ffb3d4 !important; }
+body.st-candy:not(#z) :is(.popup, .status-panel, .toast) { background: #fff !important; border: 3px solid #ffc2dd !important; box-shadow: 0 10px 0 #ffb3d4, 0 20px 40px rgba(160,40,110,.2) !important; }
+body.st-candy:not(#z) .zone-item:hover { transform: translateY(-4px) rotate(-1deg); box-shadow: 0 10px 0 #ff8ac0 !important; border-color: #ff8ac0 !important; }
+body.st-candy:not(#z) .zone-item img { border-radius: 18px 18px 0 0; }
+body.st-candy:not(#z) .zone-item button { color: #5a2546; font-weight: 600; }
+body.st-candy:not(#z) .section-title { color: #c4185f; font-weight: 600; }
+body.st-candy:not(#z) :is(.settings-button, #gotd .gotd-play) { background: linear-gradient(180deg, rgba(255,255,255,.45) 0 30%, transparent 45%), #ff5fa2 !important; color: #fff !important; border: 0 !important; border-radius: 999px !important; box-shadow: 0 5px 0 #d63c80, inset 0 -3px 0 rgba(0,0,0,.08) !important; font-weight: 600; transition: transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s; }
+body.st-candy:not(#z) :is(.theme-button:not(.scene-pick), .finder-chip, .filter-button, .control-button) { background: linear-gradient(180deg, rgba(255,255,255,.6) 0 30%, transparent 45%), #ffe0ef !important; color: #8a1f55 !important; border: 0 !important; border-radius: 999px !important; box-shadow: 0 4px 0 #ffb3d4 !important; transition: transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s; }
+body.st-candy:not(#z) header .control-button { background: linear-gradient(180deg, rgba(255,255,255,.6) 0 30%, transparent 45%), #fff !important; color: #c4185f !important; }
+body.st-candy:not(#z) :is(.settings-button, .theme-button:not(.scene-pick), .finder-chip, .filter-button, .control-button, #gotd .gotd-play):hover { transform: translateY(-2px) scale(1.04); }
+body.st-candy:not(#z) :is(.settings-button, .theme-button:not(.scene-pick), .finder-chip, .filter-button, .control-button, #gotd .gotd-play):active { transform: translateY(3px) scale(.97); box-shadow: 0 1px 0 #d63c80 !important; }
+body.st-candy:not(#z) .control-button .control-icon { color: inherit; }
+body.st-candy:not(#z) :is(#searchBar, #searchBar:focus, input, select, textarea, .set-search) { background: #fff !important; color: #5a2546 !important; border: 3px solid #ffc2dd !important; caret-color: #ff5fa2; box-shadow: none !important; }
+body.st-candy:not(#z) #searchBar { border-radius: 999px; }
+body.st-candy:not(#z) #searchBar:focus { border-color: #ff8ac0 !important; box-shadow: 0 0 0 4px rgba(255,138,192,.3) !important; }
+body.st-candy:not(#z) :is(#searchBar, input, textarea)::placeholder { color: #8a4f73; }
+body.st-candy:not(#z) .popup-header { background: linear-gradient(90deg, #ff8ac0, #c79bff) !important; color: #fff !important; }
+body.st-candy:not(#z) footer { background: #fff5fa !important; border-top: 3px solid #ffc2dd; }
+body.reduced-motion.st-candy:not(#z) * { transition: none !important; }
+
+/* ── Fantasy quest: stone walls, parchment cards in gold frames, wax-seal buttons ── */
+body.st-quest:not(#z) {
+    --primary: #c9972f; --primary-hover: #e0b04a; --primary-light: rgba(201,151,47,.18); --primary-lighter: rgba(201,151,47,.08);
+    --text: #3b2614; --text-muted: #6b4d2e; --text-light: #6b4d2e; --accent-text: #7d1f1f;
+    --bg: #2a2622; --bg-secondary: #f2e3bf; --surface: #f4e6c4; --surface-hover: #f8edd2; --border: #a87b2e; --border-light: #c9a35c;
+    --glass: #f4e6c4; --gradient-surface: #f4e6c4; --gradient-primary: #2b241d;
+    --shadow-sm: 0 3px 8px rgba(0,0,0,.4); --shadow: 0 6px 14px rgba(0,0,0,.45); --shadow-lg: 0 10px 24px rgba(0,0,0,.5); --shadow-xl: 0 14px 34px rgba(0,0,0,.55);
+    --radius: 6px; --radius-sm: 4px; --radius-lg: 8px; --radius-xl: 10px;
+    --parchment: radial-gradient(ellipse at 50% 40%, #f8ecd0 40%, #ead5a6 85%, #d9bd84 100%);
+    font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+    /* stone blocks */
+    background:
+        linear-gradient(rgba(0,0,0,.35) 3px, transparent 3px) 0 0 / 120px 60px,
+        linear-gradient(90deg, rgba(0,0,0,.35) 3px, transparent 3px) 0 0 / 120px 120px,
+        linear-gradient(90deg, rgba(0,0,0,.35) 3px, transparent 3px) 60px 60px / 120px 120px,
+        radial-gradient(ellipse 70% 60% at 50% 30%, #4a433b, #2a2622 75%) !important;
+    background-attachment: fixed !important; color: #f2e3bf;
+}
+body.st-quest:not(#z) header { background: linear-gradient(180deg, #3a2a1c, #241a11) !important; border-bottom: 3px solid #c9972f; box-shadow: 0 4px 16px rgba(0,0,0,.6) !important; }
+body.st-quest:not(#z) .logo { color: #e8c063; font-weight: 700; letter-spacing: .06em; text-shadow: 0 2px 0 #5a3a10, 0 0 14px rgba(232,192,99,.35); }
+body.st-quest:not(#z) .logo::before { content: "\2694"; margin-right: .4rem; font-size: .85em; }
+body.st-quest:not(#z) :is(.zone-item, #gotd, .settings-section, .filter-menu) { background: var(--parchment) !important; border: 3px double #a87b2e !important; box-shadow: 0 6px 16px rgba(0,0,0,.5), inset 0 0 18px rgba(120,80,20,.25) !important; color: #3b2614; }
+body.st-quest:not(#z) :is(.popup, .status-panel, .toast) { background: var(--parchment) !important; border: 3px double #a87b2e !important; box-shadow: 0 18px 44px rgba(0,0,0,.6) !important; color: #3b2614; }
+body.st-quest:not(#z) .zone-item:hover { border-color: #e0b04a !important; transform: translateY(-3px); box-shadow: 0 10px 22px rgba(0,0,0,.55), 0 0 18px rgba(224,176,74,.35) !important; }
+body.st-quest:not(#z) .zone-item img { border-bottom: 2px solid #a87b2e; filter: sepia(.15); }
+body.st-quest:not(#z) .zone-item button { color: #3b2614; font-weight: 700; }
+body.st-quest:not(#z) .section-title { color: #e8c063; letter-spacing: .04em; text-shadow: 0 2px 0 #1a120b; }
+body.st-quest:not(#z) .section-title::before { content: "\2766"; color: #c9972f; margin-right: .2rem; font-weight: 400; }
+body.st-quest:not(#z) .section-title .section-count { color: #d9c08a; }
+body.st-quest:not(#z) summary.section-title::after { border-color: #c9972f; }
+body.st-quest:not(#z) :is(.settings-button, #gotd .gotd-play) { background: radial-gradient(circle at 35% 30%, #b03a3a, #7d1f1f 70%) !important; color: #f6dfa0 !important; border: 2px solid #5a1414 !important; border-radius: 6px !important; box-shadow: 0 3px 0 #4a1010, inset 0 1px 0 rgba(255,255,255,.2) !important; font-weight: 700; letter-spacing: .03em; }
+body.st-quest:not(#z) :is(.theme-button:not(.scene-pick), .finder-chip, .filter-button, .control-button) { background: linear-gradient(180deg, #4a3826, #2f2216) !important; color: #f2e3bf !important; border: 2px solid #a87b2e !important; border-radius: 6px !important; box-shadow: 0 2px 0 #1a120b !important; }
+body.st-quest:not(#z) .control-button .control-icon { color: #e8c063; }
+body.st-quest:not(#z) :is(#searchBar, #searchBar:focus, input, select, textarea, .set-search) { background: #f8ecd0 !important; color: #3b2614 !important; border: 2px solid #a87b2e !important; caret-color: #7d1f1f; box-shadow: inset 0 2px 5px rgba(120,80,20,.25) !important; }
+body.st-quest:not(#z) #searchBar:focus { border-color: #e0b04a !important; }
+body.st-quest:not(#z) :is(#searchBar, input, textarea)::placeholder { color: #6b4d2e; }
+body.st-quest:not(#z) .popup-header { background: linear-gradient(180deg, #3a2a1c, #241a11) !important; color: #e8c063 !important; border-bottom: 2px solid #c9972f; }
+body.st-quest:not(#z) footer { background: linear-gradient(180deg, #3a2a1c, #241a11) #2b1f15 !important; border-top: 3px solid #c9972f; }
+body.st-quest:not(#z) footer .footer-links a { color: #f2e3bf; }
+
+/* ── Web 1999: a starry homepage, rainbow logo, glowing table borders, blue links ── */
+body.st-web99:not(#z) {
+    --primary: #ffff00; --primary-hover: #ffff99; --primary-light: rgba(255,255,0,.15); --primary-lighter: rgba(255,255,0,.07);
+    --text: #ffffff; --text-muted: #c8c8ff; --text-light: #b0b0ee; --accent-text: #ffff00;
+    --bg: #000000; --bg-secondary: #000033; --surface: #000033; --surface-hover: #00004d; --border: #00ffff; --border-light: #0099cc;
+    --glass: #000033; --gradient-surface: #000033; --gradient-primary: #000000;
+    --shadow-sm: none; --shadow: none; --shadow-lg: none; --shadow-xl: none;
+    --radius: 0; --radius-sm: 0; --radius-lg: 0; --radius-xl: 0;
+    font-family: "Times New Roman", Times, serif;
+    background:
+        radial-gradient(1px 1px at 20px 30px, #fff, transparent), radial-gradient(1px 1px at 120px 80px, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 200px 160px, #ffff99, transparent), radial-gradient(1px 1px at 60px 190px, #fff, transparent),
+        radial-gradient(1px 1px at 170px 20px, #aaf, transparent), radial-gradient(2px 2px at 90px 120px, #fff, transparent) #000 !important;
+    background-size: 220px 220px !important; color: #fff;
+}
+body.st-web99:not(#z) header { background: #000 !important; border-bottom: 4px ridge #c0c0c0; box-shadow: none !important; backdrop-filter: none; }
+body.st-web99:not(#z) .logo { font-family: "Comic Sans MS", "Comic Neue", cursive; font-weight: 700; font-size: 2rem;
+    background: linear-gradient(90deg, #ff0000, #ff9900, #ffff00, #00ff00, #00ffff, #6666ff, #ff00ff) !important; -webkit-background-clip: text !important; background-clip: text !important; -webkit-text-fill-color: transparent !important; }
+body.st-web99:not(#z) :is(.zone-item, #gotd, .settings-section, .filter-menu) { background: #000033 !important; border: 4px ridge #00ffff !important; box-shadow: none !important; }
+body.st-web99:not(#z) :is(.popup, .status-panel, .toast) { background: #000033 !important; border: 4px ridge #00ffff !important; box-shadow: none !important; }
+body.st-web99:not(#z) .zone-item:hover { border-color: #ff00ff !important; transform: none; }
+body.st-web99:not(#z) .zone-item button { color: #ffff00; text-decoration: underline; font-weight: 700; }
+body.st-web99:not(#z) .section-title { font-family: "Comic Sans MS", "Comic Neue", cursive; color: #00ff00; text-decoration: underline; }
+body.st-web99:not(#z) .section-title::after { filter: none; }
+body.st-web99:not(#z) :is(.settings-button, #gotd .gotd-play) { background: #c0c0c0 !important; color: #000 !important; border: 3px outset #fff !important; border-radius: 0 !important; box-shadow: none !important; font-family: "Arial", sans-serif; font-weight: 700; }
+body.st-web99:not(#z) :is(.settings-button, #gotd .gotd-play):active { border-style: inset !important; }
+body.st-web99:not(#z) :is(.theme-button:not(.scene-pick), .finder-chip, .filter-button, .control-button) { background: #c0c0c0 !important; color: #000 !important; border: 3px outset #fff !important; border-radius: 0 !important; box-shadow: none !important; }
+body.st-web99:not(#z) .control-button .control-icon { color: #000; }
+body.st-web99:not(#z) :is(#searchBar, #searchBar:focus, input, select, textarea, .set-search) { background: #fff !important; color: #000 !important; border: 3px inset #c0c0c0 !important; border-radius: 0 !important; caret-color: #000; box-shadow: none !important; }
+body.st-web99:not(#z) :is(#searchBar, input, textarea)::placeholder { color: #555; }
+body.st-web99:not(#z) .popup-header { background: #000080 !important; color: #ffff00 !important; }
+body.st-web99:not(#z) footer { background: #000 !important; border-top: 4px ridge #c0c0c0; }
+body.st-web99:not(#z) footer .footer-links a { color: #6699ff; text-decoration: underline; }
+body.st-web99:not(#z) footer .footer-links a:visited { color: #cc66ff; }
+
+/* ── Spreadsheet: looks like a work sheet (gridlines, formula bar, cells) ── */
+body.st-sheet:not(#z) {
+    --primary: #188038; --primary-hover: #137333; --primary-light: rgba(24,128,56,.12); --primary-lighter: rgba(24,128,56,.06);
+    --text: #202124; --text-muted: #5f6368; --text-light: #5f6368; --accent-text: #137333;
+    --bg: #ffffff; --bg-secondary: #f8f9fa; --surface: #ffffff; --surface-hover: #e8f0fe; --border: #dadce0; --border-light: #e8eaed;
+    --glass: #ffffff; --gradient-surface: #ffffff; --gradient-primary: #ffffff;
+    --shadow-sm: none; --shadow: 0 1px 3px rgba(60,64,67,.3); --shadow-lg: 0 2px 8px rgba(60,64,67,.3); --shadow-xl: 0 4px 14px rgba(60,64,67,.3);
+    --radius: 0; --radius-sm: 4px; --radius-lg: 0; --radius-xl: 8px;
+    font-family: Arial, "Roboto", Helvetica, sans-serif; font-size: 13px;
+    /* gridlines */
+    background: linear-gradient(#e2e3e5 1px, transparent 1px) 0 0 / 100% 24px, linear-gradient(90deg, #e2e3e5 1px, transparent 1px) 46px 0 / 104px 100%, #fff !important;
+    background-attachment: fixed !important; color: #202124;
+}
+body.st-sheet:not(#z) header { background: #f9fbfd !important; border-bottom: 1px solid #dadce0; box-shadow: none !important; backdrop-filter: none; color: #202124; }
+body.st-sheet:not(#z) .logo { color: #202124; font-size: 1.15rem; font-weight: 400; letter-spacing: 0; display: inline-flex; align-items: center; gap: .5rem; }
+body.st-sheet:not(#z) .logo::before { content: ""; width: 22px; height: 28px; border-radius: 3px; background: linear-gradient(#fff, #fff) 5px 9px / 12px 2px no-repeat, linear-gradient(#fff, #fff) 5px 14px / 12px 2px no-repeat, linear-gradient(#fff, #fff) 5px 19px / 12px 2px no-repeat, linear-gradient(#fff, #fff) 10px 9px / 2px 12px no-repeat, #188038; }
+/* the formula bar */
+body.st-sheet:not(#z) header::after { content: "fx"; display: block; padding: 4px 12px 4px 52px; border-top: 1px solid #dadce0; background: #fff; color: #80868b; font: italic 13px Georgia, serif; }
+body.st-sheet:not(#z) :is(.zone-item, #gotd, .settings-section, .filter-menu) { background: #fff !important; border: 1px solid #dadce0 !important; box-shadow: none !important; border-radius: 0 !important; }
+body.st-sheet:not(#z) :is(.popup, .status-panel, .toast) { background: #fff !important; border: 1px solid #dadce0 !important; border-radius: 8px !important; }
+body.st-sheet:not(#z) .zone-item:hover { outline: 2px solid #1a73e8; outline-offset: -2px; transform: none; }
+body.st-sheet:not(#z) .zone-item button { color: #202124; font-weight: 400; font-size: 13px; }
+body.st-sheet:not(#z) .section-title { color: #202124; font-size: 14px; font-weight: 700; background: #f1f3f4; border: 1px solid #dadce0; padding: 2px 10px; display: inline-flex; }
+body.st-sheet:not(#z) :is(.settings-button, #gotd .gotd-play) { background: #188038 !important; color: #fff !important; border: 0 !important; border-radius: 4px !important; box-shadow: none !important; font-weight: 500; }
+body.st-sheet:not(#z) :is(.theme-button:not(.scene-pick), .finder-chip, .filter-button, .control-button) { background: transparent !important; color: #444746 !important; border: 1px solid transparent !important; border-radius: 4px !important; box-shadow: none !important; }
+body.st-sheet:not(#z) :is(.theme-button:not(.scene-pick), .finder-chip, .filter-button, .control-button):hover { background: #e8eaed !important; }
+body.st-sheet:not(#z) .control-button .control-icon { color: #444746; }
+body.st-sheet:not(#z) :is(#searchBar, #searchBar:focus, input, select, textarea, .set-search) { background: #f1f3f4 !important; color: #202124 !important; border: 1px solid transparent !important; border-radius: 4px !important; caret-color: #1a73e8; box-shadow: none !important; }
+body.st-sheet:not(#z) #searchBar:focus { background: #fff !important; border-color: #1a73e8 !important; }
+body.st-sheet:not(#z) :is(#searchBar, input, textarea)::placeholder { color: #5f6368; }
+body.st-sheet:not(#z) .popup-header { background: #f9fbfd !important; color: #202124 !important; border-bottom: 1px solid #dadce0; }
+body.st-sheet:not(#z) footer { background: #f9fbfd !important; border-top: 1px solid #dadce0; }
+body.st-sheet:not(#z) footer .footer-links a { color: #444746; font-weight: 400; }
+
+/* Previews in the style picker */
+.skin-prev-hud .skin-art { background: #050b14; } .skin-prev-hud i:nth-child(1) { background: #08131f; border-bottom: 1px solid #36e3ff; } .skin-prev-hud i:nth-child(n+2) { border: 1px solid #36e3ff; clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); background: rgba(54,227,255,.12); }
+.skin-prev-candy .skin-art { background: #ffe6f2; } .skin-prev-candy i:nth-child(1) { background: linear-gradient(90deg, #ff8ac0, #c79bff); } .skin-prev-candy i:nth-child(n+2) { background: #fff; border: 2px solid #ffc2dd; border-radius: 9px; box-shadow: 0 3px 0 #ffb3d4; }
+.skin-prev-quest .skin-art { background: #2a2622; } .skin-prev-quest i:nth-child(1) { background: #3a2a1c; border-bottom: 2px solid #c9972f; } .skin-prev-quest i:nth-child(n+2) { background: radial-gradient(#f8ecd0 40%, #e0c58e); border: 2px double #a87b2e; }
+.skin-prev-web99 .skin-art { background: radial-gradient(1px 1px at 10px 10px, #fff, transparent) 0 0 / 22px 22px, #000; } .skin-prev-web99 i:nth-child(1) { background: linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #f0f); height: 6px; } .skin-prev-web99 i:nth-child(n+2) { background: #000033; border: 2px ridge #0ff; }
+.skin-prev-sheet .skin-art { background: linear-gradient(#e2e3e5 1px, transparent 1px) 0 0 / 100% 7px, linear-gradient(90deg, #e2e3e5 1px, transparent 1px) 0 0 / 14px 100%, #fff; } .skin-prev-sheet i:nth-child(1) { background: #188038; height: 6px; } .skin-prev-sheet i:nth-child(n+2) { background: #fff; border: 1px solid #1a73e8; }
 
 </style>
     <meta name="theme-color" content="#fb2651">
@@ -3587,6 +3904,7 @@ body.st-lcd:not(#z) footer { background: #c9c6bf !important; border-top: 6px sol
         </div>
     </div>
 
+    <footer>
     <div class="footer-links">
             <a href="#" onclick="loadDMCA(); return false;">DMCA</a>
             <a href="#" onclick="loadPrivacy(); return false;">Privacy Policy</a>
@@ -3839,6 +4157,60 @@ body.st-lcd:not(#z) footer { background: #c9c6bf !important; border-top: 6px sol
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", setup); else setup();
     // Search boxes added later (game finder, admin search) get the same treatment
     window.protectFromAutofill = el => { if (el) { el.setAttribute("data-no-autofill", ""); if (document.activeElement !== el) el.readOnly = true; } };
+})();
+
+// ── Scroll button: jumps to the bottom of the page; near the bottom it turns
+// into "back to top". Hidden when the page is too short to scroll.
+(function () {
+    function setup() {
+        const btn = document.createElement("button");
+        btn.id = "scrollJump";
+        btn.type = "button";
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+        document.body.appendChild(btn);
+        const smooth = () => document.body.classList.contains("reduced-motion") || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) ? "auto" : "smooth";
+        const atBottom = () => window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 200;
+        function update() {
+            const scrollable = document.documentElement.scrollHeight > window.innerHeight * 1.5;
+            btn.hidden = !scrollable;
+            const up = atBottom();
+            btn.classList.toggle("up", up);
+            const label = up ? "Back to top" : "Scroll to the bottom";
+            btn.setAttribute("aria-label", label); btn.title = label;
+        }
+        // Long distances jump instantly; a smooth scroll over thousands of cards takes ages
+        const behaviorFor = top => Math.abs(top - window.scrollY) > window.innerHeight * 3 ? "auto" : smooth();
+        // All games keeps adding cards for a few seconds after the page loads, so after
+        // jumping down, keep following the bottom until it settles (or the person scrolls).
+        let followUntil = 0, followCap = 0, lastHeight = 0;
+        const stopFollowing = () => { followUntil = 0; };
+        ["wheel", "touchstart", "keydown", "mousedown"].forEach(ev => window.addEventListener(ev, e => { if (e.target !== btn && !btn.contains(e.target)) stopFollowing(); }, { passive: true }));
+        btn.addEventListener("click", () => {
+            // do what the button shows, even if more cards arrived since it last updated
+            if (btn.classList.contains("up")) { stopFollowing(); window.scrollTo({ top: 0, behavior: behaviorFor(0) }); return; }
+            const bottom = document.documentElement.scrollHeight;
+            window.scrollTo({ top: bottom, behavior: behaviorFor(bottom) });
+            // keep following while the page is still growing: 2s after the last growth, 20s at most
+            followCap = Date.now() + 20000; followUntil = Date.now() + 2000; lastHeight = bottom;
+        });
+        const follow = () => {
+            if (!followUntil) return;
+            const now = Date.now(), h = document.documentElement.scrollHeight;
+            if (h !== lastHeight) { lastHeight = h; followUntil = Math.min(followCap, now + 2000); }
+            if (now > followUntil) { followUntil = 0; return; }
+            if (!atBottom()) window.scrollTo({ top: h, behavior: "auto" });
+        };
+        // growth stops firing scroll events, so check on a timer while following
+        setInterval(() => { if (followUntil) schedule(); }, 250);
+        let pending = false;
+        const schedule = () => { if (!pending) { pending = true; requestAnimationFrame(() => { pending = false; follow(); update(); }); } };
+        window.addEventListener("scroll", schedule, { passive: true });
+        window.addEventListener("resize", schedule);
+        // the page grows as game lists load
+        if (typeof ResizeObserver !== "undefined") new ResizeObserver(schedule).observe(document.body);
+        update();
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", setup); else setup();
 })();
 
 </script>
@@ -12779,7 +13151,13 @@ const SITE_SKINS = {
     blueprint:{ label: "Blueprint",      note: "White lines on blue drafting paper" },
     aero:     { label: "Frutiger Aero",  note: "Blue sky, green hills, bubbles and glossy glass" },
     neon:     { label: "Neon sign",      note: "Glowing tubes on a dark brick wall" },
-    lcd:      { label: "Handheld",       note: "A 4-shade green handheld game screen" }
+    lcd:      { label: "Handheld",       note: "A 4-shade green handheld game screen" },
+    dock:     { label: "Dock",           note: "Dark desktop with a dock of buttons and a clock along the bottom" },
+    hud:      { label: "Sci-fi HUD",     note: "A spaceship console with glowing cyan panels" },
+    candy:    { label: "Candy",          note: "Pastel sprinkles and squishy jelly buttons" },
+    quest:    { label: "Fantasy quest",  note: "Parchment cards in gold frames on a stone wall" },
+    web99:    { label: "Web 1999",       note: "An old-school starry homepage with a rainbow logo" },
+    sheet:    { label: "Spreadsheet",    note: "Looks like a work spreadsheet" }
 };
 const SKIN_KEY = "gnmath-site-skin";
 function getSiteSkin() {
@@ -12793,7 +13171,70 @@ function applySiteSkin(skin = getSiteSkin()) {
     Object.keys(SITE_SKINS).forEach(k => b.classList.remove("st-" + k));
     if (skin !== "default") b.classList.add("st-" + skin);
     document.querySelectorAll("[data-skin]").forEach(el => el.classList.toggle("active", el.dataset.skin === skin));
+    if (skin === "dock") buildDock();
+    placeStatusLight();
 }
+// The Dock style shows the status light inside the dock, by the clock; other styles keep it in its corner
+function placeStatusLight() {
+    const light = document.getElementById("siteStatus");
+    if (!light) return;
+    const dock = document.getElementById("gnDock");
+    const inDock = document.body.classList.contains("st-dock") && dock;
+    if (inDock && light.parentElement !== dock) dock.insertBefore(light, dock.querySelector(".dock-clock"));
+    else if (!inDock && light.parentElement !== document.body) document.body.appendChild(light);
+}
+// the status light is created by status.js, possibly after this runs
+setInterval(placeStatusLight, 1500);
+
+// ── Dock style: section buttons along the bottom. Each one presses the site's own
+// button for that feature, so everything (sign-in, random options...) works the same.
+function buildDock() {
+    if (document.getElementById("gnDock")) return;
+    const icon = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+    const press = id => () => { const b = document.getElementById(id); if (b) b.click(); };
+    const items = [
+        { key: "games", label: "Games", d: '<rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 11v3M5.5 12.5h3M15.5 12h.01M18 13.5h.01"/>',
+          act: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
+        { key: "search", label: "Search", d: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+          act: () => { window.scrollTo({ top: 0, behavior: "smooth" }); const s = document.getElementById("searchBar"); if (s) { s.readOnly = false; s.focus(); } } },
+        { key: "yours", label: "Your games", d: '<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/>',
+          act: () => { const y = document.getElementById("yourGames"); if (y && !y.hidden) y.scrollIntoView({ behavior: "smooth", block: "start" }); else if (typeof notify === "function") notify("Games you play or star show up here."); } },
+        { key: "random", label: "Random", d: '<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.2"/><circle cx="15.5" cy="15.5" r="1.2"/><circle cx="12" cy="12" r="1.2"/>', act: press("randomGame") },
+        { key: "finder", label: "Find a game", d: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>', act: press("finderButton") },
+        { key: "account", label: "Account", d: '<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/>', act: press("accountButton") },
+        { key: "settings", label: "Settings", d: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>', act: press("settings") }
+    ];
+    const dock = document.createElement("nav");
+    dock.id = "gnDock";
+    dock.setAttribute("aria-label", "Sections");
+    dock.innerHTML = `<button type="button" class="dock-home" title="Back to the top" aria-label="Back to the top">gn</button><span class="dock-sep" aria-hidden="true"></span>
+        <div class="dock-items">${items.map(it => `<button type="button" class="dock-item${it.key === "games" ? " active" : ""}" data-dock="${it.key}">${icon(it.d)}<span>${it.label}</span></button>`).join("")}</div>
+        <div class="dock-clock" aria-hidden="true"><b></b><span></span></div>`;
+    document.body.appendChild(dock);
+    dock.querySelector(".dock-home").onclick = items[0].act;
+    items.forEach(it => { dock.querySelector(`[data-dock="${it.key}"]`).onclick = it.act; });
+    // Account only when the site's own account button is shown (accounts can be off)
+    const syncAccount = () => {
+        const a = document.getElementById("accountButton");
+        dock.querySelector('[data-dock="account"]').hidden = !a || a.style.display === "none";
+    };
+    syncAccount();
+    const ab = document.getElementById("accountButton");
+    if (ab && typeof MutationObserver !== "undefined") new MutationObserver(syncAccount).observe(ab, { attributes: true, attributeFilter: ["style", "hidden"] });
+    // Clock: the person's own time and date
+    const clock = dock.querySelector(".dock-clock");
+    const tick = () => {
+        if (!document.body.classList.contains("st-dock") || document.hidden) return;
+        const now = new Date();
+        clock.querySelector("b").textContent = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        clock.querySelector("span").textContent = now.toLocaleDateString();
+    };
+    tick();
+    setInterval(tick, 15000);
+    placeStatusLight();
+    document.addEventListener("visibilitychange", tick);
+}
+
 function setSiteSkin(skin) {
     if (!SITE_SKINS[skin]) skin = "default";
     try { localStorage.setItem(SKIN_KEY, skin); } catch {}
