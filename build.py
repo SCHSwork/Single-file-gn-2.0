@@ -150,58 +150,12 @@ def template_js(path, js):
                    + guard.replace(" return {};", " return;"))
         js = patch(js, path, "async function githubSyncPushOnce() {",
                    "async function githubSyncPushOnce() {" + guard.replace(" return {};", " return false;"))
-    if path == "js/app.js":
-        # Phones: drawing all ~1,700 cards makes scrolling stutter. Build the
-        # All games list in pages of 150 and add the next page as you near the
-        # bottom (measured: ~22 -> ~32 fps scrolling on a throttled phone).
-        js = patch(js, path,
-                   "    const idle = window.requestIdleCallback || (cb => setTimeout(() => cb({ timeRemaining: () => 8 }), 16));\n"
-                   "    const step = deadline => {\n"
-                   "        if (drawId !== zonesDrawId || next >= visibleZones.length) return;\n"
-                   "        // At least a few cards per step so it always finishes, more when the browser is free\n"
-                   "        addCards(built => built >= 12 && deadline.timeRemaining() < 3);\n"
-                   "        if (next < visibleZones.length) idle(step);\n"
-                   "    };\n"
-                   "    idle(step);",
-                   "    const idle = window.requestIdleCallback || (cb => setTimeout(() => cb({ timeRemaining: () => 8 }), 16));\n"
-                   "    let limit = GN_CARD_PAGE;\n"
-                   "    const step = deadline => {\n"
-                   "        if (drawId !== zonesDrawId || next >= visibleZones.length) return;\n"
-                   "        if (next >= limit) { gnCheckListEnd(); return; }\n"
-                   "        addCards(built => (built >= 12 && deadline.timeRemaining() < 3) || next >= limit);\n"
-                   "        if (next < visibleZones.length) idle(step);\n"
-                   "    };\n"
-                   "    window.__gnMoreCards = () => {\n"
-                   "        if (drawId !== zonesDrawId || next >= visibleZones.length || next < limit) return;\n"
-                   "        limit = next + GN_CARD_PAGE; idle(step);\n"
-                   "    };\n"
-                   "    gnListSentinel();\n"
-                   "    idle(step);")
-        js = patch(js, path, "function displayZones(zones) {",
-                   "const GN_CARD_PAGE = 150;\n"
-                   "let gnSentinelObserver = null;\n"
-                   "function gnListSentinel() {\n"
-                   "    let el = document.getElementById(\"gnListEnd\");\n"
-                   "    if (!el) {\n"
-                   "        el = document.createElement(\"div\");\n"
-                   "        el.id = \"gnListEnd\"; el.setAttribute(\"aria-hidden\", \"true\"); el.style.height = \"1px\";\n"
-                   "        container.after(el);\n"
-                   "    }\n"
-                   "    if (!gnSentinelObserver && \"IntersectionObserver\" in window) {\n"
-                   "        gnSentinelObserver = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting) && window.__gnMoreCards) window.__gnMoreCards(); }, { rootMargin: \"0px 0px 1600px 0px\" });\n"
-                   "        gnSentinelObserver.observe(el);\n"
-                   "    }\n"
-                   "    return el;\n"
-                   "}\n"
-                   "// After a page is built: if the end of the list is still on screen, keep going\n"
-                   "function gnCheckListEnd() {\n"
-                   "    const el = document.getElementById(\"gnListEnd\");\n"
-                   "    if (!el || !window.__gnMoreCards) return;\n"
-                   "    if (!(\"IntersectionObserver\" in window)) { window.__gnMoreCards(); return; }\n"
-                   "    const r = el.getBoundingClientRect();\n"
-                   "    if (r.height || r.top) { if (r.top < innerHeight + 1600) window.__gnMoreCards(); }\n"
-                   "}\n"
-                   "function displayZones(zones) {")
+    if path == "js/skins.js":
+        # Site styles are inside the page (see main()): add one as a <style> tag
+        js = patch(js, path, "    let link = document.getElementById(\"skin-css-\" + skin);\n    if (!link) {",
+                   "    let link = document.getElementById(\"skin-css-\" + skin);\n"
+                   "    if (!link && typeof gnSkinStyle === \"function\" && window.GN_SKIN_CSS_TEXT && window.GN_SKIN_CSS_TEXT[skin]) link = gnSkinStyle(skin);\n"
+                   "    if (!link) {")
     if path == "js/status.js":
         # Accounts row: say "not set up" when there's no Firebase, and stop
         # waiting after 20s when Firebase never answers (blocked or very slow
@@ -306,6 +260,28 @@ def main():
         if gn_light not in html:
             sys.exit("build.py: couldn't find the GN Light footer link; index.html changed")
         html = html.replace(gn_light, "")
+
+    # Site styles (css/skins/<key>.css): the site loads only the one in use, as a
+    # separate file. Here they're all inside the page and added as <style> tags.
+    skin_old = ("document.write('<link rel=\"stylesheet\" id=\"skin-css-' + k + '\" "
+                "href=\"css/skins/' + k + '.css?v=' + window.GN_SKIN_CSS[k] + '\">');")
+    if skin_old not in html:
+        sys.exit("build.py: couldn't find the site-style loader in index.html; index.html changed")
+    skins = {f.stem: f.read_text(encoding="utf-8") for f in sorted((SRC / "css/skins").glob("*.css"))}
+    html = html.replace(skin_old, "gnSkinStyle(k, document.head);")
+    skin_js = ("<script>\n// Site styles, inside this page (the hosted site loads them from css/skins/)\n"
+               "window.GN_SKIN_CSS_TEXT = " + safe_in_script(json.dumps(skins, ensure_ascii=False).replace("</", "<\\/")) + ";\n"
+               "function gnSkinStyle(k, parent) {\n"
+               "    var el = document.getElementById(\"skin-css-\" + k);\n"
+               "    if (el || !window.GN_SKIN_CSS_TEXT[k]) return el;\n"
+               "    el = document.createElement(\"style\");\n"
+               "    el.id = \"skin-css-\" + k;\n"
+               "    el.textContent = window.GN_SKIN_CSS_TEXT[k];\n"
+               "    el.dataset.loaded = \"1\";\n"
+               "    (parent || document.head).appendChild(el);\n"
+               "    return el;\n"
+               "}\n</script>\n")
+    html = html.replace("    window.GN_SKIN_CSS = ", "    </script>\n" + skin_js + "    <script>\n    window.GN_SKIN_CSS = ", 1)
 
     # Stylesheet
     def inline_css(m):
