@@ -105,7 +105,7 @@ def template_js(path, js):
                    "async function requestOwnerAccess(onSuccess) {\n"
                    "    if (!GITHUB_SYNC_REPO) { if (typeof notify === \"function\") notify(\"The Owner Panel isn't set up on this site (see SETUP.md, part E).\"); return; }")
         # Source health check: use the game library's own list instead of the original site's repo
-        js = patch(js, path, 'MIRRORS[name]("SCHSwork", "math", "main", "config/library-pinned.json")',
+        js = patch(js, path, 'MIRRORS[name]("SCHSwork", "math", "main", "manifest.json")',
                    'MIRRORS[name]("freebuisness", "assets", "main", "zones.json")')
         js = patch(js, path, "put it in SCHSwork/GN-originals (see its README), then mark it added.",
                    "add it to your site, then mark it added.")
