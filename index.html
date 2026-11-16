@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ 34b5dd66f8. -->
+<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ 7a9f533e26. -->
 <html lang="en">
     <head>
 <script>
@@ -150,6 +150,10 @@ window.GN_CONFIG = {
     <meta name="twitter:description" content="Free browser games on GN 2.0. No downloads, no ads from us, and cloud saves with a free account.">
     <style>
 :root {
+    /* Motion: one set of curves so everything moves the same way */
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);       /* fast start, soft landing */
+    --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);   /* tiny overshoot */
+    --ease-in: cubic-bezier(0.55, 0, 1, 0.45);         /* for things leaving */
     --primary: #fc2651;
     --primary-hover: #e91e47;
     --primary-light: rgba(252, 38, 81, 0.1);
@@ -308,7 +312,7 @@ body {
     padding: 0;
     background: var(--bg);
     color: var(--text);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.35s var(--ease-out), color 0.35s var(--ease-out);
     font-weight: 400;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -432,7 +436,7 @@ header {
     color: var(--text);
     font-size: 15px;
     outline: none;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.25s var(--ease-out), color 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out), transform 0.25s var(--ease-out);
     box-shadow: var(--shadow-sm);
 }
 
@@ -497,7 +501,7 @@ main {
     border-radius: var(--radius-lg);
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out), border-color 0.25s ease, background-color 0.25s ease;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -510,17 +514,16 @@ main {
 #container .zone-item:nth-child(n+41) { animation: none; }
 #container .zone-item { content-visibility: auto; contain-intrinsic-size: auto 240px; }
 body.cards-list #container .zone-item { contain-intrinsic-size: auto 64px; }
-#container .zone-item:nth-child(2n), #featuredZones .zone-item:nth-child(2n) { animation-delay: 40ms; }
-#container .zone-item:nth-child(3n), #featuredZones .zone-item:nth-child(3n) { animation-delay: 80ms; }
-#container .zone-item:nth-child(5n), #featuredZones .zone-item:nth-child(5n) { animation-delay: 120ms; }
+/* Cards ripple in left-to-right, top-to-bottom (app.js sets --i on each one) */
+#container .zone-item, #featuredZones .zone-item { animation-delay: calc(min(var(--i, 0), 18) * 16ms); }
 
 @keyframes cardEnter {
-    from { opacity: 0; transform: translateY(14px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: none; }
 }
 
 .zone-item:hover {
-    transform: translateY(-8px) scale(1.02);
+    transform: translateY(-6px);
     box-shadow: var(--shadow-xl);
     border-color: var(--primary);
 }
@@ -546,11 +549,11 @@ body.cards-list #container .zone-item { contain-intrinsic-size: auto 64px; }
     object-fit: cover;
     display: block;
     background: var(--border-light);
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.6s var(--ease-out);
 }
 
 .zone-item:hover img {
-    transform: scale(1.05);
+    transform: scale(1.06);
 }
 
 /* ── Home layout ─────────────────────────────────────────────────────────── */
@@ -660,7 +663,7 @@ summary.section-title:focus-visible { outline: 2px solid var(--primary); outline
 }
 .shelf[hidden] { display: none; }
 .shelf .zone-item { scroll-snap-align: start; flex-direction: column; align-self: start; animation: none; }
-.shelf .zone-item:hover { transform: translateY(-3px); }
+.shelf .zone-item:hover { transform: translateY(-4px); }
 .shelf .zone-item img { width: 100%; height: auto; }
 .shelf .zone-item > button:not(.card-fav) {
     display: -webkit-box;
@@ -1069,7 +1072,7 @@ body.cards-list .card-meta { margin: 0; padding: 0 0.75rem 0 0; flex-shrink: 0; 
     font-size: 14px;
     line-height: 1.4;
     text-align: center;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
     min-height: 70px;
     display: flex;
     align-items: center;
@@ -1489,17 +1492,17 @@ html.site-mode-closed, html.site-mode-closed body { overflow: hidden; }
     z-index: 1000;
     display: none;
     flex-direction: column;
-    animation: slideInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overscroll-behavior: none;
+    animation: zvFadeIn 0.28s ease-out;
 }
-
-@keyframes slideInUp {
-    from {
-        transform: translateY(100%);
-    }
-    to {
-        transform: translateY(0);
-    }
-}
+/* Opened from a card: the card grows to fill the screen first (motion.js), then
+   the game fades in over it. The viewer never moves or shrinks, so there's no
+   gap at the edges where the page behind could show through. */
+#zoneViewer.zv-from-card { animation: zvFadeIn 0.22s ease-out 0.2s backwards; }
+#zoneViewer > .zone-header { animation: zvHeaderIn 0.4s var(--ease-out) 0.12s backwards; }
+#zoneViewer.zv-from-card > .zone-header { animation-delay: 0.26s; }
+@keyframes zvFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes zvHeaderIn { from { transform: translateY(-100%); } to { transform: none; } }
 
 .zone-header {
     background: var(--gradient-primary);
@@ -1531,7 +1534,7 @@ html.site-mode-closed, html.site-mode-closed body { overflow: hidden; }
     font-size: 14px;
     color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease;
     font-weight: 500;
 }
 
@@ -1554,7 +1557,7 @@ html.site-mode-closed, html.site-mode-closed body { overflow: hidden; }
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
 }
 
 .zone-controls button:hover {
@@ -1584,7 +1587,7 @@ html.site-mode-closed, html.site-mode-closed body { overflow: hidden; }
     justify-content: center;
     z-index: 2000;
     padding: 1rem;
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn 0.25s ease-out;
 }
 
 @keyframes fadeIn {
@@ -1607,18 +1610,13 @@ html.site-mode-closed, html.site-mode-closed body { overflow: hidden; }
     display: flex;
     flex-direction: column;
     border: 1px solid var(--border);
-    animation: slideInScale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideInScale 0.38s var(--ease-out);
 }
 
 @keyframes slideInScale {
-    from {
-        transform: scale(0.9) translateY(20px);
-        opacity: 0;
-    }
-    to {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-    }
+    from { transform: scale(0.94) translateY(14px); opacity: 0; }
+    60% { opacity: 1; }
+    to { transform: none; opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1654,7 +1652,7 @@ body.reduced-motion *, body.reduced-motion *::before, body.reduced-motion *::aft
     cursor: pointer;
     padding: 0.5rem;
     border-radius: var(--radius);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.25s var(--ease-out);
     line-height: 1;
     width: 36px;
     height: 36px;
@@ -1685,7 +1683,7 @@ body.reduced-motion *, body.reduced-motion *::before, body.reduced-motion *::aft
     background: var(--bg-secondary);
     color: var(--text);
     font-size: 15px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
     outline: none;
 }
 
@@ -1721,7 +1719,7 @@ footer {
     text-decoration: none;
     font-weight: 600;
     font-size: 15px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: color 0.2s ease, opacity 0.2s ease;
     padding: 0.5rem 1rem;
     border-radius: var(--radius);
 }
@@ -1841,7 +1839,7 @@ footer {
     font-weight: 600;
     border-radius: var(--radius);
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
     box-shadow: var(--shadow-sm);
     min-width: 200px;
     width: 100%;
@@ -1873,7 +1871,7 @@ footer {
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s var(--ease-out), box-shadow 0.2s ease;
 }
 
 .theme-button:hover {
@@ -2463,11 +2461,13 @@ body.cards-list .zone-item::after { display: none; }
 
 /* Pressing a button pushes it in a little */
 .settings-button, .theme-button, .finder-chip, .filter-button, .control-button, .status-pill, .omb-actions button, .fb-vote, .site-mode-check {
-    transition: transform 0.12s ease, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s, filter 0.15s;
+    transition: transform 0.3s var(--ease-spring), background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s, filter 0.15s;
 }
+/* Press in fast, spring back out on release */
+:is(.settings-button, .theme-button, .finder-chip, .filter-button, .control-button, .status-pill, .omb-actions button, .fb-vote, .site-mode-check):active { transition-duration: 0.08s; transition-timing-function: ease-out; }
 .settings-button:active, .theme-button:active, .finder-chip:active, .filter-button:active, .omb-actions button:active, .fb-vote:active, .site-mode-check:active { transform: scale(0.96); }
 .control-button:active { transform: translateY(0) scale(0.92); }
-.zone-item:active { transform: translateY(-4px) scale(0.99); transition-duration: 0.1s; }
+.zone-item:active { transform: translateY(-3px) scale(0.985); transition-duration: 0.1s; }
 
 /* Favorite star pops when you turn it on */
 .zone-item button.card-fav.on { animation: mStarPop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1); }
@@ -2480,19 +2480,19 @@ body.cards-list .zone-item::after { display: none; }
 
 /* Tabs: the new page fades in */
 .set-pane:not([hidden]), #admin-accounts:not([hidden]), #admin-submissions:not([hidden]),
-#admin-newgames:not([hidden]), #admin-feedback:not([hidden]), #fb-form, #fb-ideas { animation: mPaneIn 0.25s ease-out; }
-@keyframes mPaneIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+#admin-newgames:not([hidden]), #admin-feedback:not([hidden]), #fb-form, #fb-ideas { animation: mPaneIn 0.32s var(--ease-out); }
+@keyframes mPaneIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes mTabPop { 0% { transform: scale(0.94); } 100% { transform: scale(1); } }
 
 /* Popups close with a quick shrink instead of vanishing */
-#popupOverlay.closing { animation: mFadeOut 0.17s ease-in forwards; }
-#popupOverlay.closing .popup { animation: mPopOut 0.17s ease-in forwards; }
+#popupOverlay.closing { animation: mFadeOut 0.18s ease-in forwards; }
+#popupOverlay.closing .popup { animation: mPopOut 0.18s var(--ease-in) forwards; }
 @keyframes mFadeOut { to { opacity: 0; } }
-@keyframes mPopOut { to { opacity: 0; transform: scale(0.95) translateY(8px); } }
+@keyframes mPopOut { to { opacity: 0; transform: scale(0.96) translateY(6px); } }
 
 /* Home sections slide up as you scroll to them */
 .home-section.reveal { opacity: 0; transform: translateY(24px); }
-.home-section.reveal.in-view { opacity: 1; transform: none; transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+.home-section.reveal.in-view { opacity: 1; transform: none; transition: opacity 0.5s ease-out, transform 0.7s var(--ease-out); }
 
 /* Today's pick: a gentle shimmer on the Play button */
 #gotd .gotd-play { position: relative; overflow: hidden; }
@@ -2514,15 +2514,49 @@ body.cards-list .zone-item::after { display: none; }
 /* Dark/light switch: the new look spreads out in a circle (motion.js) */
 html.vt-reveal::view-transition-old(root), html.vt-reveal::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 html.vt-reveal::view-transition-new(root) { z-index: 2; }
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.3s; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.35s; animation-timing-function: ease-out; }
 
 /* Everything above stops with Reduce motion (in Settings, or on the device) */
 @media (prefers-reduced-motion: reduce) {
     .zone-item::after, #gotd .gotd-play::after { display: none; }
     .control-icon, .zone-item button.card-fav.on, .set-pane, #popupOverlay.closing, #popupOverlay.closing .popup { animation: none !important; }
     .home-section.reveal { opacity: 1; transform: none; }
+    .zv-ghost { display: none; }
 }
 body.reduced-motion .home-section.reveal { opacity: 1; transform: none; }
+body.reduced-motion .zv-ghost { display: none; }
+
+/* Closing a game: the viewer drops away instead of blinking out (motion.js) */
+.zv-ghost {
+    position: fixed; inset: 0; z-index: 1000; pointer-events: none;
+    display: flex; flex-direction: column; background: #000;
+    animation: zvGhostOut 0.26s var(--ease-in) forwards;
+}
+.zv-ghost > .zone-header { flex: none; }
+@keyframes zvGhostOut { to { opacity: 0; transform: translateY(28px) scale(0.985); } }
+/* Closing with its card on screen: the game shrinks back into the card instead */
+.zv-ghost.zv-to-card { animation: none; transform-origin: 0 0; will-change: transform, opacity; overflow: hidden; }
+
+/* Opening: the card you clicked grows to fill the screen (motion.js) */
+.zv-expand {
+    position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; z-index: 999;
+    pointer-events: none; overflow: hidden; background: var(--bg);
+    transform-origin: 0 0; will-change: transform;
+}
+.zv-expand img { width: 100%; height: 100%; object-fit: cover; display: block; will-change: opacity; }
+body.reduced-motion .zv-expand { display: none; }
+@media (prefers-reduced-motion: reduce) {
+    .zv-expand { display: none; }
+    #zoneViewer, #zoneViewer > .zone-header { animation: none !important; }
+}
+body.reduced-motion #zoneViewer, body.reduced-motion #zoneViewer > .zone-header { animation: none !important; }
+
+/* Hover lifts only on real mice, so cards don't stay stuck "up" after a tap */
+@media (hover: none) {
+    .zone-item:hover, .shelf .zone-item:hover { transform: none; }
+    .zone-item:hover img { transform: none; }
+    .zone-item:hover::after { animation: none; }
+}
 
 /* ── Scene themes ────────────────────────────────────────────────────────── */
 /* Shared "always dark, glassy" look for every scene */
@@ -3518,7 +3552,12 @@ html.site-mode-closed #popupOverlay { z-index: 2000000; }
 
 /* While a game is open, the page behind it can't scroll: otherwise its
    scrollbar stays at the side of the screen next to the game and does nothing */
-html:has(#zoneViewer[style*="flex"]), html:has(#zoneViewer[style*="flex"]) body { overflow: hidden !important; }
+html:has(#zoneViewer[style*="flex"]), html:has(#zoneViewer[style*="flex"]) body { overflow: hidden !important; overscroll-behavior: none; }
+/* …and once the game has opened, the page behind it isn't drawn at all, so a fast
+   scroll/swipe (or the phone's address bar sliding) can never show cards behind
+   the game. It comes back the moment the game closes. */
+body:has(#zoneViewer[style*="flex"]) > :is(header, main, footer, #owner-announcement-bar) { animation: zvPageAway 0s linear 0.5s forwards; }
+@keyframes zvPageAway { to { visibility: hidden; } }
 
 </style>
     <script>
@@ -6084,8 +6123,10 @@ function setSectionTitle(el, title, count) {
 function displayFeaturedZones(featuredZones) {
     clearCards(featuredContainer);
     const visibleFeaturedZones = featuredZones.filter(file => !isZoneDisabled(file.id));
-    visibleFeaturedZones.forEach(file => {
-        featuredContainer.appendChild(createZoneCard(file));
+    visibleFeaturedZones.forEach((file, i) => {
+        const card = createZoneCard(file);
+        card.style.setProperty("--i", i);   // stagger for the ripple-in animation
+        featuredContainer.appendChild(card);
     });
     if (featuredContainer.innerHTML === "") {
         featuredContainer.textContent = "No featured games right now.";
@@ -6157,7 +6198,8 @@ function displayZones(zones) {
         const imgs = [];
         const stop = Math.min(visibleZones.length, rest.next + count);
         while (rest.next < stop) {
-            const card = createZoneCard(visibleZones[rest.next++]);
+            const card = createZoneCard(visibleZones[rest.next]);
+            card.style.setProperty("--i", rest.next++);   // stagger for the ripple-in animation
             const img = card.querySelector("img.lazy-zone-img");
             if (img) imgs.push(img);
             frag.appendChild(card);
@@ -7028,10 +7070,35 @@ window.gnGameNotice = function (kind) {
 };
 function crossOriginWorkerHook() {
     var W = window.Worker;
+    // Hand-patched Construct 3 copies glue the <base> address in front of an
+    // address that's already complete ("https://cdn…/447/https://cdn…/x.js", or
+    // "…/447/https://this-site/x.js"). Use the inner address, moved into the
+    // game's folder if it pointed at this site.
+    var unwrap = function (u) {
+        var m = typeof u === "string" && u.match(/^https?:\/\/\S*?\/(https?:\/\/\S+)$/);
+        if (!m) return u;
+        try {
+            var inner = new URL(m[1]);
+            if (inner.origin !== location.origin) return inner.href;
+            var dir = location.href.replace(/[?#].*$/, "").replace(/[^\/]*$/, "");
+            return new URL(inner.href.indexOf(dir) === 0 ? inner.href.slice(dir.length) : inner.pathname.replace(/^\//, ""), document.baseURI).href;
+        } catch (e) { return u; }
+    };
+    try {
+        var of = window.fetch;
+        if (of) window.fetch = function (u, o) {
+            if (typeof u === "string" || u instanceof URL) { var f = unwrap(String(u)); if (f !== String(u)) u = f; }
+            else if (u && typeof Request !== "undefined" && u instanceof Request) { var r = unwrap(u.url); if (r !== u.url) u = new Request(r, u); }
+            return of.call(this, u, o);
+        };
+        var xo = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function (m, u) { if (typeof u === "string" || u instanceof URL) arguments[1] = unwrap(String(u)); return xo.apply(this, arguments); };
+    } catch (e) {}
     if (!W) return;
     var Shim = function (url, opts) {
         try {
             if (typeof url === "string" || url instanceof URL) {
+                url = unwrap(String(url));
                 var abs = new URL(String(url), document.baseURI);
                 if (abs.origin !== location.origin && abs.protocol !== "blob:" && abs.protocol !== "data:") {
                     var a = JSON.stringify(abs.href);
@@ -7089,8 +7156,10 @@ function construct3Hook() {
     try {
         var RI;
         var wrap = function (C) {
-            // Some library copies were already hand-patched to find their files; leave those alone
-            try { if (/querySelector\(\s*['"]base['"]\s*\)/.test(Function.prototype.toString.call(C))) return C; } catch (e) {}
+            // Some library copies were hand-patched to find their worker through <base>,
+            // but their engine scripts still load from the page's address (this site),
+            // so they stopped at a blank screen (Nijika's Ahoge). They get the same
+            // treatment; the worker shim below undoes their patch's doubled addresses.
             var W = function (opts) {
                 opts = opts || {};
                 try {
@@ -7332,11 +7401,13 @@ function openZone(file) {
         replaceZoneFrame();
         const token = ++zoneOpenToken;
         gnWriteFrame(zoneFrame, gameLoadingScreenHtml(file));
+        startGameScrollTidy();
         loadZoneHtml(file.url).then(html => {
             if (token !== zoneOpenToken) return; // another game was opened meanwhile
             
             markGamePageWritten();
             gnWriteFrame(zoneFrame, html);
+            startGameScrollTidy();
         }).catch(error => {
             endGameLoad(true);
             closeZone();
@@ -7350,6 +7421,45 @@ function openZone(file) {
         });
     }
 }
+
+// ── No scrollbar inside a game unless there's really somewhere to scroll ──
+// Lots of games are a few pixels taller/wider than the screen (the page's default
+// margin, a canvas set to 100vh, an "overflow: scroll" left on), which puts a
+// useless scrollbar next to the game. If the game fits (within a little slack),
+// its scrollbars are hidden; if it's really bigger than the screen, they stay.
+// Checked about once a second, since games resize themselves after they load.
+const GAME_SCROLL_SLACK = 24;   // px of overflow that still counts as "fits"
+let gameScrollTimer = null;
+function tidyGameScrollbars() {
+    if (zoneViewer.style.display !== "flex" || !zoneFrame) return;
+    let doc;
+    try { doc = zoneFrame.contentDocument; } catch (_) { return; }   // other site's page: can't touch it
+    if (!doc || !doc.documentElement || !doc.body) return;
+    try {
+        const sc = doc.scrollingElement || doc.documentElement;
+        const fits = sc.scrollWidth - sc.clientWidth <= GAME_SCROLL_SLACK
+                  && sc.scrollHeight - sc.clientHeight <= GAME_SCROLL_SLACK;
+        let tag = doc.getElementById("gn-no-scrollbar");
+        if (fits && !tag) {
+            tag = doc.createElement("style");
+            tag.id = "gn-no-scrollbar";
+            tag.textContent = "html, body { overflow: hidden !important; }";
+            (doc.head || doc.documentElement).appendChild(tag);
+            sc.scrollTop = 0; sc.scrollLeft = 0;
+        } else if (!fits && tag) {
+            tag.remove();   // the game grew past the screen: let it scroll again
+        }
+    } catch (_) {}
+}
+function startGameScrollTidy() {
+    clearInterval(gameScrollTimer);
+    gameScrollTimer = setInterval(() => {
+        if (zoneViewer.style.display !== "flex") { clearInterval(gameScrollTimer); gameScrollTimer = null; return; }
+        tidyGameScrollbars();
+    }, 1000);
+    setTimeout(tidyGameScrollbars, 50);
+}
+addEventListener("resize", () => { if (gameScrollTimer) setTimeout(tidyGameScrollbars, 150); });
 
 let zoneOpenToken = 0;
 function gnWriteFrame(frame, html) {
@@ -7389,6 +7499,7 @@ function closeZone() {
     if (typeof closeGameMenu === "function") closeGameMenu();
     if (typeof currentGameId !== "undefined") currentGameId = null;
     if (typeof endGameLoad === "function") endGameLoad(true);
+    clearInterval(gameScrollTimer); gameScrollTimer = null;
     zoneViewer.hidden = false;
     zoneViewer.style.display = "none";
     if (zoneFrame && zoneFrame.parentNode === zoneViewer) zoneViewer.removeChild(zoneFrame);
@@ -17785,6 +17896,7 @@ if (document.body) applyLiteFx(); else document.addEventListener("DOMContentLoad
 //   • theme colors cross-fade instead of snapping
 //   • popups animate closed instead of vanishing
 //   • home sections slide in as you scroll to them
+//   • opening a game grows it out of its card; closing shrinks it back in
 // The rest (header icons, card shine, button presses, favorite pop, tab fades)
 // is plain CSS in styles.css under "Motion".
 // ═════════════════════════════════════════════════════════════════════════════
@@ -17853,6 +17965,95 @@ if (document.body) applyLiteFx(); else document.addEventListener("DOMContentLoad
             clearTimeout(closeTimer);
             overlay.classList.remove("closing");
         }).observe(popupBox, { childList: true, subtree: true, characterData: true });
+    }
+
+    // ── Opening / closing a game ────────────────────────────────────────────
+    // Open: the card you clicked grows to fill the screen, then the game fades in
+    // over it. Close: the game shrinks back into its card (or drops away if the
+    // card isn't on screen). Only transform/opacity are animated, so it stays
+    // smooth even while the game is busy loading.
+    const viewer = document.getElementById("zoneViewer");
+    let pressedCard = null, pressedAt = 0;
+    addEventListener("pointerdown", e => {
+        const card = e.target && e.target.closest && e.target.closest(".zone-item");
+        if (card) { pressedCard = card; pressedAt = performance.now(); }
+    }, { capture: true, passive: true });
+
+    const onScreen = r => r.width > 20 && r.height > 20 && r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth;
+    const toRect = r => `translate(${r.left}px, ${r.top}px) scale(${r.width / innerWidth}, ${r.height / innerHeight})`;
+    const cardFor = id => {
+        if (pressedCard && pressedCard.isConnected && pressedCard.dataset.id === String(id)
+            && performance.now() - pressedAt < 1500 && onScreen(pressedCard.getBoundingClientRect())) return pressedCard;
+        for (const c of document.querySelectorAll(`.zone-item[data-id="${CSS.escape(String(id))}"]`)) {
+            if (onScreen(c.getBoundingClientRect())) return c;
+        }
+        return null;
+    };
+    const clearFx = () => document.querySelectorAll(".zv-expand, .zv-ghost").forEach(g => g.remove());
+
+    if (viewer && typeof openZone === "function") {
+        const plainOpenZone = openZone;
+        window.openZone = openZone = function (file, ...rest) {
+            const wasOpen = viewer.style.display === "flex";
+            const card = !wasOpen && !reduced() && file && !String(file.url || "").startsWith("http") ? cardFor(file.id) : null;
+            clearFx();
+            viewer.classList.toggle("zv-from-card", !!card);
+            const result = plainOpenZone.call(this, file, ...rest);
+            if (card && viewer.style.display === "flex") {
+                const r = card.getBoundingClientRect();
+                const fx = document.createElement("div");
+                fx.className = "zv-expand";
+                fx.setAttribute("aria-hidden", "true");
+                const img = card.querySelector("img");
+                if (img && img.currentSrc && img.complete && img.naturalWidth) {
+                    const pic = new Image();
+                    pic.src = img.currentSrc;
+                    pic.alt = "";
+                    fx.appendChild(pic);
+                    pic.animate([{ opacity: 1 }, { opacity: 1, offset: 0.35 }, { opacity: 0 }], { duration: 420, easing: "ease-out", fill: "forwards" });
+                }
+                document.body.appendChild(fx);
+                fx.animate([{ transform: toRect(r) }, { transform: "none" }], { duration: 380, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" });
+                setTimeout(() => fx.remove(), 520);
+            }
+            return result;
+        };
+    }
+
+    if (viewer && typeof closeZone === "function") {
+        const plainCloseZone = closeZone;
+        window.closeZone = closeZone = function (...args) {
+            const wasOpen = viewer.style.display === "flex";
+            const header = wasOpen && !reduced() ? viewer.querySelector(".zone-header") : null;
+            const idEl = document.getElementById("zoneId");
+            const id = idEl ? idEl.textContent : "";
+            const result = plainCloseZone.apply(this, args);
+            clearFx();
+            if (header) {
+                const ghost = document.createElement("div");
+                ghost.className = "zv-ghost";
+                ghost.setAttribute("aria-hidden", "true");
+                const copy = header.cloneNode(true);
+                copy.querySelectorAll("[id]").forEach(el => el.removeAttribute("id"));
+                copy.removeAttribute("id");
+                ghost.appendChild(copy);
+                const card = id ? cardFor(id) : null;
+                document.body.appendChild(ghost);
+                const done = () => ghost.remove();
+                if (card) {
+                    ghost.classList.add("zv-to-card");
+                    ghost.animate([{ transform: "none", opacity: 1 }, { opacity: 1, offset: 0.6 }, { transform: toRect(card.getBoundingClientRect()), opacity: 0 }],
+                        { duration: 320, easing: "cubic-bezier(0.4, 0, 0.2, 1)", fill: "forwards" }).finished.then(done, done);
+                } else {
+                    ghost.addEventListener("animationend", done, { once: true });
+                }
+                setTimeout(done, 600);
+            }
+            return result;
+        };
+        // Opened another game right away: drop any leftover close animation
+        new MutationObserver(() => { if (viewer.style.display === "flex") document.querySelectorAll(".zv-ghost").forEach(g => g.remove()); })
+            .observe(viewer, { attributes: true, attributeFilter: ["style"] });
     }
 
     // ── Home sections slide in as they come into view ───────────────────────
