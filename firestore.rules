@@ -6,7 +6,7 @@ service cloud.firestore {
 
     // Cloud saves: only the owning account can read or write them.
     match /saves/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if verifiedOk() && request.auth.uid == uid;
     }
 
     // Ratings + broken reports, split across shard docs s0..s15:
@@ -15,7 +15,7 @@ service cloud.firestore {
     // remove their OWN vote/report, for one game per write.
     match /gameStats/{shard} {
       allow read: if true;
-      allow create, update: if request.auth != null
+      allow create, update: if verifiedOk()
         && shard.matches('s([0-9]|1[0-5])')
         && ((validStatsWrite() && !isBanned()) || isAdmin());
     }
@@ -24,7 +24,7 @@ service cloud.firestore {
     // read or delete their own. Admins and mods can read all of them and change
     // status/note.
     match /submissions/{id} {
-      allow create: if request.auth != null && !isBanned() && validSubmission(request.resource.data);
+      allow create: if verifiedOk() && !isBanned() && validSubmission(request.resource.data);
       allow read: if request.auth != null && (resource.data.uid == request.auth.uid || isStaff());
       allow update: if isStaff()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'note'])
@@ -94,9 +94,9 @@ service cloud.firestore {
     // played, games tried and the game open now (shown in the Admin Panel)
     match /profiles/{uid} {
       allow read: if request.auth != null && (request.auth.uid == uid || isStaff());
-      allow create, update: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['username', 'createdAt', 'lastSeen', 'level', 'xp', 'badges', 'played', 'tried', 'playing'])
-        && request.resource.data.username == request.auth.token.email.split('@')[0]
+      allow create, update: if verifiedOk() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['username', 'createdAt', 'lastSeen', 'level', 'xp', 'badges', 'played', 'tried', 'playing', 'sid'])
+        && ownsUsername(request.resource.data.username)
         && shortText(request.resource.data.createdAt, 40)
         && request.resource.data.lastSeen == request.time
         && optInt(request.resource.data, 'level', 0, 1000)
@@ -104,7 +104,8 @@ service cloud.firestore {
         && optInt(request.resource.data, 'badges', 0, 500)
         && optInt(request.resource.data, 'played', 0, 100000000)
         && optInt(request.resource.data, 'tried', 0, 100000)
-        && (!('playing' in request.resource.data) || (request.resource.data.playing is string && request.resource.data.playing.matches('[0-9]{0,7}')));
+        && (!('playing' in request.resource.data) || (request.resource.data.playing is string && request.resource.data.playing.matches('[0-9]{0,7}')))
+        && (!('sid' in request.resource.data) || (request.resource.data.sid is string && request.resource.data.sid.matches('[A-Za-z0-9]{20}')));
       allow delete: if request.auth != null && (request.auth.uid == uid || isAdmin());
     }
 
@@ -121,6 +122,73 @@ service cloud.firestore {
         && request.resource.data.t == request.time
         && request.resource.data.s in ['gn2', 'light']
         && (!('u' in request.resource.data) || validUsage(request.resource.data.u));
+    }
+
+    // Sessions (Admin Panel → Sessions): written once per visit by the browser
+    // whose presence id it is: when the visit started (st), browser, system,
+    // device type, screen size, language, time zone and site address. Only
+    // admins can read them.
+    match /sessions/{id} {
+      allow get, list: if isAdmin();
+      allow create, update: if id.matches('[A-Za-z0-9]{20}')
+        && request.resource.data.keys().hasOnly(['st', 's', 'b', 'os', 'd', 'sc', 'lang', 'tz', 'host'])
+        && request.resource.data.st == request.time
+        && request.resource.data.s in ['gn2', 'light']
+        && shortText(request.resource.data.b, 40) && shortText(request.resource.data.os, 40)
+        && request.resource.data.d in ['computer', 'tablet', 'phone']
+        && shortText(request.resource.data.sc, 12) && shortText(request.resource.data.lang, 20)
+        && shortText(request.resource.data.tz, 60) && shortText(request.resource.data.host, 100);
+      allow delete: if isAdmin();
+    }
+
+    // Usernames. Accounts made before emails were added sign in as
+    // <username>@gnmath.local, so their username is in their sign-in email.
+    // Accounts with a real email (new ones, and old ones that added one) claim
+    // their username here: usernames/<name> { uid, e: has a real email }.
+    // Anyone can look one up (to see if it's taken); only admins can list them.
+    match /usernames/{name} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if name.matches('[a-z0-9_]{3,20}')
+        && request.resource.data.keys().hasOnly(['uid', 'e']) && request.resource.data.e is bool
+        && request.resource.data.uid is string
+        && (isAdmin() || (request.auth != null && request.resource.data.uid == request.auth.uid
+          && (request.auth.token.email == name + '@gnmath.local' || !isLegacyAuth())));
+      allow update: if request.auth != null && resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'e']) && request.resource.data.e is bool
+        && request.resource.data.uid == resource.data.uid;
+      allow delete: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
+    }
+
+    // Live site mode (js/realtime.js): the owner's browser writes the site
+    // mode, its message and "back at" time here so open pages switch at once.
+    match /site/mode {
+      allow get: if true;
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasOnly(['mode', 'msg', 'backAt', 'at', 'access'])
+        // Who can get in while it's closed: the accounts and the password's salted hash
+        && (!('access' in request.resource.data) || (request.resource.data.access is map
+            && request.resource.data.access.keys().hasOnly(['allowed', 'pass'])
+            && request.resource.data.access.allowed is list && request.resource.data.access.allowed.size() <= 300))
+        && request.resource.data.mode in ['open', 'locked', 'maintenance', 'shutdown']
+        && shortText(request.resource.data.msg, 400) && shortText(request.resource.data.backAt, 40)
+        && request.resource.data.at == request.time;
+    }
+
+    // Booted sessions: admins write boots/<session id> { until, reason, ... }
+    // (with an action-log entry). Each open page listens to its own (js/
+    // realtime.js) and shows a "you've been removed" screen until `until`.
+    // Anyone can read one boot by its id; only admins can list them.
+    match /boots/{id} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, update: if isAdmin() && id.matches('[A-Za-z0-9]{20}') && loggedAs(id, 'boot')
+        && request.resource.data.keys().hasOnly(['until', 'reason', 'by', 'at', 'name', 'info'])
+        && request.resource.data.until is timestamp && request.resource.data.until > request.time
+        && shortText(request.resource.data.reason, 200) && shortText(request.resource.data.by, 40)
+        && shortText(request.resource.data.name, 40) && shortText(request.resource.data.info, 200)
+        && request.resource.data.at == request.time;
+      allow delete: if isAdmin() && loggedAs(id, 'unboot');
     }
     // "N playing now" and "Top 10 this week" (js/live.js). Every 5 minutes one
     // browser adds up the presence heartbeats and saves the counts here.
@@ -157,7 +225,7 @@ service cloud.firestore {
     // and admins can read a report. Approved ideas are readable by every
     // signed-in player, who can add or remove only their own vote.
     match /feedback/{id} {
-      allow create: if request.auth != null && !isBanned() && validFeedback(request.resource.data);
+      allow create: if verifiedOk() && !isBanned() && validFeedback(request.resource.data);
       allow read: if request.auth != null && (resource.data.uid == request.auth.uid || isStaff()
         || (resource.data.type == 'feature' && resource.data.status in ['approved', 'done']));
       allow update: if isStaff() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'note', 'reviewedBy', 'reviewedAt'])
@@ -165,7 +233,7 @@ service cloud.firestore {
         && (!('note' in request.resource.data) || shortText(request.resource.data.note, 200))
         && (!('reviewedBy' in request.resource.data) || shortText(request.resource.data.reviewedBy, 40))
         && (!('reviewedAt' in request.resource.data) || request.resource.data.reviewedAt == request.time);
-      allow update: if request.auth != null && !isBanned()
+      allow update: if verifiedOk() && !isBanned()
         && resource.data.type == 'feature' && resource.data.status == 'approved'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes'])
         && request.resource.data.get('votes', {}).diff(resource.data.get('votes', {})).affectedKeys().hasOnly([request.auth.uid])
@@ -181,7 +249,7 @@ service cloud.firestore {
     match /brokenDiag/{id} {
       allow read: if isStaff();
       allow delete: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
-      allow create, update: if request.auth != null
+      allow create, update: if verifiedOk()
         && request.resource.data.keys().hasOnly(['gameId', 'gameName', 'uid', 'by', 'at', 'diag'])
         && request.resource.data.uid == request.auth.uid
         && id == request.resource.data.gameId + '_' + request.auth.uid
@@ -275,6 +343,21 @@ service cloud.firestore {
       return request.auth != null && (isOwnerUid(request.auth.uid)
         || exists(/databases/$(db)/documents/admins/$(request.auth.uid)));
     }
+    // Accounts from before emails (<username>@gnmath.local) are fine as they
+    // are; accounts with a real email must have verified it first
+    function isLegacyAuth() { return request.auth.token.email.matches('.*@gnmath[.]local'); }
+    function verifiedOk() {
+      return request.auth != null && request.auth.token.email is string
+        && (isLegacyAuth() || request.auth.token.email_verified == true);
+    }
+    // The username in a profile is this account's: from its old-style sign-in
+    // email, or claimed in usernames/
+    function ownsUsername(name) {
+      return name is string && name.matches('[a-z0-9_]{3,20}')
+        && ((isLegacyAuth() && name == request.auth.token.email.split('@')[0])
+          || (exists(/databases/$(db)/documents/usernames/$(name))
+            && get(/databases/$(db)/documents/usernames/$(name)).data.uid == request.auth.uid));
+    }
     function isOwner() { return request.auth != null && isOwnerUid(request.auth.uid); }
     // Admins, or mods who aren't suspended
     function isStaff() {
@@ -288,7 +371,7 @@ service cloud.firestore {
         && d.action in ['suspend', 'unsuspend', 'make_mod', 'remove_mod', 'make_admin', 'remove_admin',
                         'remove_ratings', 'remove_rating', 'delete_submissions',
                         'make_trusted', 'remove_trusted', 'mark_fixed',
-                        'give_site_access', 'remove_site_access']
+                        'give_site_access', 'remove_site_access', 'boot', 'unboot']
         && shortText(d.target, 128) && shortText(d.targetName, 40)
         && shortText(d.byName, 40) && shortText(d.detail, 200);
     }
