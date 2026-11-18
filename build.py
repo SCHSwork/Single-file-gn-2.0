@@ -305,7 +305,9 @@ def main():
     html = re.sub(r'<script src="([^"?]+)(?:\?[^"]*)?"></script>', inline_js, html)
     if not seen:
         sys.exit("build.py: no scripts found to inline")
-    leftover = re.findall(r'<(?:script|link)[^>]+(?:src|href)="(?!https?:|data:)[^"]+"', html)
+    # "${...}" is an address the site's code fills in while it runs (a game's
+    # Ruffle player, say), not a file next to index.html
+    leftover = re.findall(r'<(?:script|link)[^>]+(?:src|href)="(?!https?:|data:|\$\{)[^"]+"', html)
     if leftover:
         sys.exit(f"build.py: local files still referenced: {leftover}")
 
