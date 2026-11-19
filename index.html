@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ cb8671fe23. -->
+<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ c3bed9a070. -->
 <html lang="en">
     <head>
 <script>
@@ -290,7 +290,6 @@ body.cards-list   #container {
 body.cards-list .zone-item { flex-direction: row; align-items: center; }
 body.cards-list .zone-item img { width: 64px; height: 64px; aspect-ratio: 1; flex-shrink: 0; }
 body.cards-list .zone-item button { flex: 1; text-align: left; padding: 0.75rem 1rem; min-height: unset; }
-body.cards-list .zone-actions { padding: 0 0.75rem 0 0; flex-shrink: 0; }
 
 /* Font size */
 body.font-small { font-size: 13px; }
@@ -469,24 +468,6 @@ main {
     margin: 0 auto;
     padding: 2rem 1rem;
     padding-bottom: 6rem;
-}
-
-#zoneCount {
-    margin: 0 0 1.5rem;
-    font-size: 14px;
-    color: var(--text-muted);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-#zoneCount::before {
-    content: '';
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--primary);
 }
 
 #container {
@@ -1086,14 +1067,6 @@ body.cards-list .card-meta { margin: 0; padding: 0 0.75rem 0 0; flex-shrink: 0; 
     background: rgba(252, 38, 81, 0.05);
 }
 
-.zone-actions {
-    display: flex;
-    gap: 0.5rem;
-    padding: 0 1rem 1rem;
-    position: relative;
-    z-index: 2;
-}
-
 /* ── Lock / shutdown screens ────────────────────────────────────────────── */
 html.site-mode-closed, html.site-mode-closed body { overflow: hidden; }
 #owner-site-overlay {
@@ -1443,6 +1416,11 @@ html.site-mode-closed, html.site-mode-closed body { overflow: hidden; }
 .status-people b { display: block; font-size: 14px; font-variant-numeric: tabular-nums; }
 .status-people span { display: block; font-size: 12px; color: var(--text-muted); }
 .status-owner-note { background: color-mix(in srgb, var(--rc) 10%, transparent); margin-bottom: 4px; }
+.status-full-link { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 0.5rem; margin: 0.5rem 0 0.6rem; padding: 0.55rem 0.7rem; border: 1px solid var(--border); border-radius: 10px; color: var(--text); text-decoration: none; font-size: 13px; font-weight: 700; }
+.status-full-link small { grid-column: 1; font-size: 11.5px; font-weight: 500; color: var(--text-muted); }
+.status-full-link svg { grid-column: 2; grid-row: 1 / span 2; width: 16px; height: 16px; color: var(--text-muted); }
+.status-full-link:hover { background: var(--surface-hover); }
+.status-full-link:hover svg { color: var(--text); }
 .status-panel-foot { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; padding: 0.6rem 0.2rem 0; border-top: 1px solid var(--border); font-size: 11.5px; color: var(--text-muted); }
 .status-hide { border: none; background: none; color: var(--text-muted); font: inherit; font-size: 11.5px; cursor: pointer; padding: 0.2rem 0.3rem; border-radius: 6px; }
 .status-hide:hover { color: var(--text); text-decoration: underline; }
@@ -2066,7 +2044,6 @@ input[type="checkbox"]:focus-visible, input[type="color"]:focus-visible, select:
 }
 header button:focus-visible, header select:focus-visible { outline-color: #fff; }
 #popupOverlay:focus { outline: none; }
-.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 /* Keyboard shortcuts list */
 .shortcuts { width: 100%; border-collapse: collapse; }
 .shortcuts td { padding: 0.55rem 0.25rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
@@ -2492,7 +2469,6 @@ body.cards-list .zone-item::after { display: none; }
 .set-pane:not([hidden]), #admin-accounts:not([hidden]), #admin-submissions:not([hidden]),
 #admin-newgames:not([hidden]), #admin-feedback:not([hidden]), #fb-form, #fb-ideas { animation: mPaneIn 0.32s var(--ease-out); }
 @keyframes mPaneIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-@keyframes mTabPop { 0% { transform: scale(0.94); } 100% { transform: scale(1); } }
 
 /* Popups close with a quick shrink instead of vanishing */
 #popupOverlay.closing { animation: mFadeOut 0.18s ease-in forwards; }
@@ -2893,7 +2869,6 @@ body.theme-lava { --bg: #120302; --primary: #f97316; --primary-hover: #fb923c; -
 .theme-sakura #scene .f2 { opacity: 0.6; animation: scFallSway 32s linear -12s infinite; transform-origin: 30% 50%; }
 
 @keyframes scGlowA { from { opacity: 0.15; } to { opacity: 1; } }
-@keyframes scWander { 0% { translate: 0 0; } 50% { translate: 3vw -4vh; } 100% { translate: -2vw -8vh; } }
 
 /* Neon city: glowing skyline in the rain */
 .theme-neoncity #scene .a1 { display: block; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% 100%, rgba(168, 85, 247, 0.4), transparent 70%), linear-gradient(180deg, #07041a 0%, #1a0b3d 70%, #2b0f4f 100%); }
@@ -2966,7 +2941,6 @@ body.theme-arcade { --bg: #0c0520; --primary: #facc15; --primary-hover: #fde047;
 
 /* Drifting clouds: wide strips that slide left and repeat */
 @keyframes scClouds { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
-.cloud-strip { left: 0; width: 200%; background-repeat: repeat-x; background-size: 50% 100%; }
 
 /* Sunny sky: blue sky, a warm sun and fluffy clouds */
 .theme-clouds #scene .a1 { display: block; inset: 0; background: linear-gradient(180deg, #38bdf8 0%, #7dd3fc 45%, #e0f2fe 100%); }
@@ -2979,7 +2953,6 @@ body.theme-arcade { --bg: #0c0520; --primary: #facc15; --primary-hover: #fde047;
 .theme-clouds #scene .a3 { top: 6%; height: 26vh; opacity: 0.95; filter: drop-shadow(0 6px 10px rgba(14, 116, 144, 0.15)); animation: scClouds 120s linear infinite; }
 .theme-clouds #scene .a4 { top: 40%; height: 18vh; opacity: 0.6; animation: scClouds 200s linear -60s infinite; }
 
-@keyframes scPalm { from { transform: rotate(-2deg); } to { transform: rotate(2.5deg); } }
 
 /* Autumn leaves: orange, red and yellow leaves tumbling down */
 .theme-autumn #scene .a1 { display: block; inset: 0; background: radial-gradient(ellipse 80% 60% at 70% 0%, rgba(251, 191, 36, 0.45), transparent 70%), linear-gradient(180deg, #fed7aa 0%, #fde8c8 60%, #fcd9a8 100%); }
@@ -3037,7 +3010,6 @@ body.theme-arcade { --bg: #0c0520; --primary: #facc15; --primary-hover: #fde047;
 .theme-arcade #scene .a5 { display: block; inset: 0; background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px); }
 .theme-arcade #scene .s1 { display: block; opacity: 0.5; }
 
-@keyframes scSet { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, 6vh, 0); } }
 
 /* ── Pattern scenes ── */
 body.theme-confetti { --bg: #fffaf0; --primary: #e11d48; --primary-hover: #be123c; --primary-light: rgba(225,29,72,.13); --primary-lighter: rgba(225,29,72,.07); --gradient-primary: linear-gradient(135deg, #e11d48, #f59e0b, #10b981, #3b82f6); --shadow-glow: 0 0 22px rgba(225,29,72,.3); }
@@ -3682,6 +3654,20 @@ body:has(#zoneViewer[style*="flex"]) > :is(header, main, footer, #owner-announce
 .find-screen .finder-chip { display: inline-flex; align-items: center; gap: 5px; }
 .find-screen-tag { padding: 4px 10px; border-radius: 999px; font-weight: 800; font-size: 13px; white-space: nowrap; }
 .find-screen-tag[hidden] { display: none; }
+.perks-editor { flex-basis: 100%; margin: 0.25rem 0; }
+.perks-editor > summary { cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.perks-editor svg, .perk-pill svg { width: 16px; height: 16px; flex: none; }
+.perk-line { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.perk-line small { display: block; color: var(--text-muted); font-size: 12px; }
+.perk-line svg { width: 16px; height: 16px; vertical-align: -3px; }
+.perk-cd { white-space: nowrap; font-size: 13px; }
+.perk-cd input { width: 5.5em; padding: 3px 6px; }
+.perk-status { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.75rem; }
+.perk-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: var(--text-muted); }
+.scare-style { display: inline-flex; align-items: center; gap: 8px; margin: 0.5rem 0; font-size: 14px; font-weight: 600; }
+.scare-style svg { width: 16px; height: 16px; }
+.scare-style select { padding: 4px 8px; }
+.perk-pill.ready { background: rgba(34, 197, 94, 0.18); color: #4ade80; }
 .scare-pics { margin-top: 1rem; }
 .scare-pics summary { cursor: pointer; font-weight: 700; }
 .scare-pics textarea { width: 100%; margin: 0.4rem 0; font-family: ui-monospace, monospace; font-size: 12px; }
@@ -6061,7 +6047,7 @@ function gameMirrorHook(MAP, T, DOWN) {
 window.gnMirrorFailed = function (name) { if (MIRRORS[name]) markMirror(name, false); };
 // Small copies of the covers (covers-small/, made by tools/build_small_covers.py).
 // Many covers are far bigger than the card they're shown on (some are over
-// 10 MB); the copy is the same picture, only scaled down to fit (640 px at
+// 10 MB); the copy is the same picture, only scaled down to fit (400 px at
 // most). It comes from the site itself, so it also shows on networks that
 // block GitHub and jsDelivr. The original stays as the fallback.
 let smallCovers = null;
@@ -11444,7 +11430,8 @@ const CLOUD = {
     sdkVersion: "10.12.2",
     usernameDomain: "gnmath.local",          // usernames become fake emails: name@gnmath.local
     autosaveMs: 2 * 60 * 1000,               // autosave every 2 minutes while signed in
-    chunkChars: 900000,                      // Firestore docs max out at ~1 MB
+    chunkChars: 500000,                      // Firestore docs max out at ~1 MB; smaller parts get through slow connections
+    blobMin: 64 * 1024,                      // game data entries bigger than this are stored once, by content (see splitBlobs)
     maxChars: 18000000,                      // ~18 MB compressed cap per save
     keys: {
         syncedGen: "gnmath-cloud-synced-gen",
@@ -11493,6 +11480,142 @@ async function packCloudBundle(bundle) {
     }
     const left = [...by.values()].map(b => ({ name: b.name, files: b.files, mb: Math.max(0.1, Math.round(b.bytes / 1e5) / 10) }));
     return { packed, left };
+}
+
+// ── Big game data, stored once ──────────────────────────────────────────────
+// A save used to be one big package, sent again whole every time anything
+// changed: a Cookie Clicker autosave re-sent 12 MB of other games' downloaded
+// files every 2 minutes, which stalled on slow connections. Now every game
+// data entry bigger than blobMin is stored on its own, named by its contents
+// (saves/<uid>/blobs/<id>_<part>), and the package only points at it
+// ({ __ref: id, n: parts }). An entry that's already in the cloud is never
+// sent again, and a save that's cut off carries on where it stopped next time,
+// since the parts it already sent are remembered (blobsDone).
+// Packages with pointers are v: 2, so an older copy of the site refuses them
+// instead of writing pointers into a game's files.
+const blobPackCache = new Map();   // id -> packed text, while it waits to be sent
+function blobsDoneKey() { return "gnmath-cloud-blobs-" + (cloudUser ? cloudUser.uid : ""); }
+function blobsDone() { try { return new Set(JSON.parse(localStorage.getItem(blobsDoneKey()) || "[]")); } catch { return new Set(); } }
+function markBlobPartDone(name) {
+    try {
+        const list = [...blobsDone()].filter(x => x !== name);
+        list.push(name);
+        localStorage.setItem(blobsDoneKey(), JSON.stringify(list.slice(-3000)));
+    } catch {}
+}
+function blobsOf(save) { return Array.isArray(save && save.blobs) ? save.blobs.filter(b => b && b.id) : []; }
+async function splitBlobs(bundle) {
+    const blobs = new Map();
+    const indexedDB = [];
+    for (const db of bundle.indexedDB || []) {
+        const stores = [];
+        for (const st of db.stores) {
+            const entries = [];
+            for (const e of st.entries) {
+                const j = JSON.stringify(e);
+                if (j.length < CLOUD.blobMin) { entries.push(e); continue; }
+                const id = (await sha256Hex(j)).slice(0, 32);
+                let b = blobs.get(id);
+                if (!b) {
+                    let packed = blobPackCache.get(id);
+                    if (!packed) { packed = await gzipToB64(j); blobPackCache.set(id, packed); }
+                    b = { id, n: Math.max(1, Math.ceil(packed.length / CLOUD.chunkChars)), size: packed.length, db: db.name };
+                    blobs.set(id, b);
+                }
+                entries.push({ __ref: b.id, n: b.n });
+            }
+            stores.push({ ...st, entries });
+        }
+        indexedDB.push({ ...db, stores });
+    }
+    return { main: { ...bundle, v: 2, indexedDB }, blobs: [...blobs.values()] };
+}
+// Splits off the big entries and leaves out the biggest if the whole save is
+// over the cloud's limit (they stay on this device)
+async function prepareCloudSave(bundle) {
+    const { main, blobs } = await splitBlobs(bundle);
+    const { packed, left } = await packCloudBundle(main);
+    let total = packed.length + blobs.reduce((n, b) => n + b.size, 0);
+    const out = new Set(), by = new Map();
+    for (const b of blobs.slice().sort((x, y) => y.size - x.size)) {
+        if (total <= CLOUD.maxChars) break;
+        out.add(b.id); total -= b.size;
+        const cur = by.get(b.db) || { name: b.db, files: 0, bytes: 0 };
+        cur.files++; cur.bytes += b.size; by.set(b.db, cur);
+    }
+    if (!out.size) return { packed, left, blobs, total };
+    // Pack again without the left-out pointers
+    main.indexedDB.forEach(db => db.stores.forEach(st => { st.entries = st.entries.filter(e => !(e && e.__ref && out.has(e.__ref))); }));
+    const again = await packCloudBundle(main);
+    const more = [...by.values()].map(b => ({ name: b.name, files: b.files, mb: Math.max(0.1, Math.round(b.bytes / 1e5) / 10) }));
+    return { packed: again.packed, left: [...again.left, ...more], blobs: blobs.filter(b => !out.has(b.id)), total };
+}
+// Sends the big entries the cloud doesn't have yet. have: ids already in a
+// save there. onPart(done, todo) for the progress bar.
+async function uploadBlobs(blobs, have, onPart) {
+    const done = blobsDone();
+    const ref = saveDocRef().collection("blobs");
+    const parts = [], check = [];
+    for (const b of blobs) {
+        if (have.has(b.id)) continue;
+        for (let j = 0; j < b.n; j++) (done.has(`${b.id}_${j}`) ? check : parts).push([b, j]);
+    }
+    // Parts sent before (a save that was cut off) but not in any save yet:
+    // make sure they're still there, since another device may have cleaned them up
+    for (let i = 0; i < check.length; i += 20) {
+        const snaps = await cloudStep(Promise.all(check.slice(i, i + 20).map(([b, j]) => ref.doc(`${b.id}_${j}`).get())), 60000, "Checking game data");
+        snaps.forEach((snap, k) => { if (!snap.exists) parts.push(check[i + k]); });
+    }
+    for (let i = 0; i < parts.length; i++) {
+        const [b, j] = parts[i];
+        if (onPart) onPart(i, parts.length);
+        let packed = blobPackCache.get(b.id);
+        if (!packed) throw new Error("game data changed while saving, try again");
+        const name = `${b.id}_${j}`;
+        await cloudStep(ref.doc(name).set({ d: packed.slice(j * CLOUD.chunkChars, (j + 1) * CLOUD.chunkChars) }), 60000, `Uploading game data (part ${i + 1} of ${parts.length})`);
+        markBlobPartDone(name);
+    }
+    return parts.length;
+}
+// Big entries no save points at anymore
+function dropBlobs(dropped, keep) {
+    const keepIds = new Set(keep.flatMap(s => blobsOf(s).map(b => b.id)));
+    const ref = saveDocRef().collection("blobs");
+    const gone = new Set();
+    for (const b of dropped.flatMap(blobsOf)) {
+        if (keepIds.has(b.id) || gone.has(b.id)) continue;
+        gone.add(b.id);
+        for (let j = 0; j < (b.n || 1); j++) ref.doc(`${b.id}_${j}`).delete().catch(() => {});
+    }
+    if (gone.size) {
+        try { localStorage.setItem(blobsDoneKey(), JSON.stringify([...blobsDone()].filter(x => !gone.has(x.replace(/_\d+$/, ""))))); } catch {}
+    }
+}
+// Puts the big entries back into a downloaded v2 package
+async function joinBlobs(bundle) {
+    if (!bundle || bundle.v !== 2) return bundle;
+    const want = new Map();
+    for (const db of bundle.indexedDB || []) for (const st of db.stores) for (const e of st.entries) if (e && e.__ref) want.set(e.__ref, e.n || 1);
+    const ref = saveDocRef().collection("blobs");
+    const got = new Map();
+    const ids = [...want.keys()];
+    for (let i = 0; i < ids.length; i += 4) {
+        await Promise.all(ids.slice(i, i + 4).map(async id => {
+            const n = want.get(id);
+            const parts = await cloudStep(Promise.all(Array.from({ length: n }, (_, j) => ref.doc(`${id}_${j}`).get())), 90000, "Downloading game data");
+            if (parts.some(p => !p.exists)) throw new Error("cloud save is missing some game data, try again");
+            const packed = parts.map(p => p.data().d).join("");
+            got.set(id, JSON.parse(await b64ToText(packed)));
+            blobPackCache.set(id, packed);
+        }));
+    }
+    const done = blobsDone();
+    for (const [id, n] of want) for (let j = 0; j < n; j++) done.add(`${id}_${j}`);
+    try { localStorage.setItem(blobsDoneKey(), JSON.stringify([...done].slice(-3000))); } catch {}
+    return {
+        ...bundle, v: 1,
+        indexedDB: bundle.indexedDB.map(db => ({ ...db, stores: db.stores.map(st => ({ ...st, entries: st.entries.map(e => e && e.__ref ? got.get(e.__ref) : e) })) }))
+    };
 }
 
 // ── Value encoding (IndexedDB can hold binary data that JSON can't) ──────────
@@ -11771,6 +11894,7 @@ async function fetchCloudMeta() {
 // • Saves when the tab is hidden too (switching tabs, closing the Chromebook).
 let cloudQueue = null, cloudRetryTimer = null, cloudRetryDelay = 0, cloudFailRetryable = false;
 let cloudConflictWarned = "";
+let cloudConflictNoted = "";
 function uploadCloudSave(opts = {}) {
     if (!cloudUser) return Promise.resolve(false);
     if (cloudBusy) {
@@ -11870,14 +11994,24 @@ async function uploadCloudSaveNow({ force = false, background = false } = {}) {
         }
         noteSaveState("saving", { step: "Checking your account", startedAt: Date.now(), part: 0, parts: 0 }); setCloudStatus("Saving…");
         const meta = await cloudStep(fetchCloudMeta(), 30000, "Checking your account");
+        clearTimeout(cloudSyncRetryTimer); cloudSyncRetryDelay = 0;
         const localGen = localStorage.getItem(CLOUD.keys.syncedGen);
         if (meta && meta.gen !== localGen && !force) {
             // Someone saved from another device since this device last synced.
             noteSaveState("conflict"); setCloudStatus("Another device saved newer progress — open Account to choose which to keep.");
-            // Say so once: until a choice is made, this device's progress only stays on this device
+            // Sort it out the same way as on sign-in (cloudSyncOnSignIn): load the
+            // cloud save without asking unless this device has more progress. Not
+            // in the middle of a game, since loading reloads the page: closing the
+            // game saves again and lands back here.
             if (cloudConflictWarned !== meta.gen) {
-                cloudConflictWarned = meta.gen;
-                notify("Your account was saved from another device, so this device's progress isn't being saved to the cloud. Open Account to pick which progress to keep.", { duration: 12000 });
+                const inGame = typeof zoneViewer !== "undefined" && zoneViewer.style.display === "flex";
+                if (!inGame) {
+                    cloudConflictWarned = meta.gen;
+                    setTimeout(cloudSyncOnSignIn, 0);   // after cloudBusy is cleared below
+                } else if (cloudConflictNoted !== meta.gen) {
+                    cloudConflictNoted = meta.gen;
+                    notify("Your account was saved from another device. When you close this game, the site switches to that progress (or asks, if this device has more).", { duration: 12000 });
+                }
             }
             return false;
         }
@@ -11887,32 +12021,38 @@ async function uploadCloudSaveNow({ force = false, background = false } = {}) {
             return true;
         }
         noteSaveState("saving", { step: "Packing your progress" });
-        const { packed, left } = await packCloudBundle(JSON.parse(json));
+        const { packed, left, blobs, total } = await prepareCloudSave(JSON.parse(json));
         if (packed.length > CLOUD.maxChars) {
             noteSaveState("error", { error: `The save is too big for the cloud (${(packed.length / 1e6).toFixed(1)} MB, the limit is ${(CLOUD.maxChars / 1e6).toFixed(0)} MB) even without game data. Your progress is safe on this device.` });
             setCloudStatus(`Save is too big for the cloud (${(packed.length / 1e6).toFixed(1)} MB).`);
             return false;
         }
         cloudSaveState.left = left;
+        // Game data the cloud already has (in this save or one kept from before) isn't sent again
+        const have = new Set([meta, ...keptSaves(meta)].flatMap(blobsOf).map(b => b.id));
         const gen = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
         const chunkCount = Math.max(1, Math.ceil(packed.length / CLOUD.chunkChars));
         const chunks = saveDocRef().collection("chunks");
+        const blobParts = await uploadBlobs(blobs, have, (i, n) => {
+            noteSaveState("saving", { step: `Uploading game data (part ${i + 1} of ${n})`, part: i, parts: n + chunkCount, size: total });
+        });
         for (let i = 0; i < chunkCount; i++) {
-            noteSaveState("saving", { step: `Uploading part ${i + 1} of ${chunkCount}`, part: i, parts: chunkCount, size: packed.length });
+            noteSaveState("saving", { step: `Uploading part ${i + 1} of ${chunkCount}`, part: blobParts + i, parts: blobParts + chunkCount, size: total });
             await cloudStep(chunks.doc(`${gen}_${i}`).set({ d: packed.slice(i * CLOUD.chunkChars, (i + 1) * CLOUD.chunkChars) }), 60000, `Uploading part ${i + 1} of ${chunkCount}`);
         }
-        noteSaveState("saving", { step: "Finishing up", part: chunkCount, parts: chunkCount });
+        noteSaveState("saving", { step: "Finishing up", part: 1, parts: 1 });
         // Replacing the cloud save keeps the old one for a week; expired ones are deleted
         const replacing = !!(meta && meta.gen && (force || meta.gen !== localGen));
         const now = Date.now();
         let kept = keptSaves(meta);
-        if (replacing) kept.unshift({ gen: meta.gen, chunkCount: meta.chunkCount || 0, sum: meta.sum || null, at: meta.updatedAt && meta.updatedAt.toMillis ? meta.updatedAt.toMillis() : now, until: now + KEEP_REPLACED_MS });
+        if (replacing) kept.unshift({ gen: meta.gen, chunkCount: meta.chunkCount || 0, sum: meta.sum || null, at: meta.updatedAt && meta.updatedAt.toMillis ? meta.updatedAt.toMillis() : now, until: now + KEEP_REPLACED_MS, ...(blobsOf(meta).length ? { blobs: blobsOf(meta) } : {}) });
         const drop = kept.filter((k, i) => k.until < now || i >= KEEP_REPLACED_MAX);
         kept = kept.filter(k => !drop.includes(k));
         if (meta && meta.gen && !replacing) drop.push(meta);   // an autosave over this device's own save
+        const blobList = blobs.map(b => ({ id: b.id, n: b.n }));
         await cloudStep(saveDocRef().set({
-            gen, chunkCount, hash, sum,
-            size: packed.length,
+            gen, chunkCount, hash, sum, blobs: blobList,
+            size: total,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             kept
         }), 30000, "Finishing up");
@@ -11922,7 +12062,8 @@ async function uploadCloudSaveNow({ force = false, background = false } = {}) {
             if (old.gen === gen || kept.some(k => k.gen === old.gen)) continue;
             for (let i = 0; i < (old.chunkCount || 0); i++) chunks.doc(`${old.gen}_${i}`).delete().catch(() => {});
         }
-        noteSaveState("ok", { size: packed.length, sum, left });
+        dropBlobs(drop, [{ blobs: blobList }, ...kept]);
+        noteSaveState("ok", { size: total, sum, left });
         setCloudStatus("Saved to cloud — " + new Date().toLocaleTimeString() + (left.length ? `. Left out (too big, kept on this device): ${left.map(l => `${l.files} item${l.files === 1 ? "" : "s"} from ${l.name} (${l.mb} MB)`).join(", ")}` : ""));
         return true;
     } catch (e) {
@@ -11946,19 +12087,26 @@ async function uploadCloudSaveNow({ force = false, background = false } = {}) {
 // Before a cloud save replaces this device's progress, keep a copy of this
 // device's in the cloud for a week too (if it has real progress), so it can
 // be brought back from Earlier cloud saves.
-async function keepDeviceCopy() {
+// Best effort: gives up after 45 s so a slow connection can't hold up loading
+function keepDeviceCopy() {
+    return cloudStep(keepDeviceCopyNow(), 45000, "Keeping a copy of this device's progress").catch(e => console.warn(e));
+}
+async function keepDeviceCopyNow() {
     const sum = progressSummary();
     if ((sum.level || 0) <= 1 && (sum.playSec || 0) < 600) return;
     try {
-        const { packed } = await packCloudBundle(await collectCloudBundle());
+        const { packed, blobs } = await prepareCloudSave(await collectCloudBundle());
         if (packed.length > CLOUD.maxChars) return;
+        let meta = await fetchCloudMeta();
+        if (!meta) return;
+        await uploadBlobs(blobs, new Set([meta, ...keptSaves(meta)].flatMap(blobsOf).map(b => b.id)));
         const gen = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + "d";
         const chunkCount = Math.max(1, Math.ceil(packed.length / CLOUD.chunkChars));
         const chunks = saveDocRef().collection("chunks");
         for (let i = 0; i < chunkCount; i++) await chunks.doc(`${gen}_${i}`).set({ d: packed.slice(i * CLOUD.chunkChars, (i + 1) * CLOUD.chunkChars) });
-        const meta = await fetchCloudMeta();
+        meta = await fetchCloudMeta();
         if (!meta) return;
-        const kept = [{ gen, chunkCount, sum, at: Date.now(), until: Date.now() + KEEP_REPLACED_MS, device: true }, ...keptSaves(meta)].slice(0, KEEP_REPLACED_MAX);
+        const kept = [{ gen, chunkCount, sum, at: Date.now(), until: Date.now() + KEEP_REPLACED_MS, device: true, blobs: blobs.map(b => ({ id: b.id, n: b.n })) }, ...keptSaves(meta)].slice(0, KEEP_REPLACED_MAX);
         await saveDocRef().set({ kept }, { merge: true });
     } catch (e) { console.warn("Couldn't keep a copy of this device's progress", e); }
 }
@@ -11968,7 +12116,7 @@ async function downloadCloudSave({ previous = "" } = {}) {
     try {
         setCloudStatus("Loading cloud save…");
         await keepDeviceCopy();
-        let meta = await fetchCloudMeta();
+        let meta = await cloudStep(fetchCloudMeta(), 30000, "Checking your account");
         if (!meta) { setCloudStatus("No cloud save yet."); return false; }
         if (previous) {
             const k = keptSaves(meta).find(x => x.gen === previous);
@@ -11976,13 +12124,14 @@ async function downloadCloudSave({ previous = "" } = {}) {
             meta = k;
         }
         const chunks = saveDocRef().collection("chunks");
-        const parts = await Promise.all(
+        const parts = await cloudStep(Promise.all(
             Array.from({ length: meta.chunkCount }, (_, i) => chunks.doc(`${meta.gen}_${i}`).get())
-        );
+        ), 90000, "Downloading your cloud save");
         if (parts.some(p => !p.exists)) throw new Error("cloud save is incomplete, try again");
         const json = await b64ToText(parts.map(p => p.data().d).join(""));
+        const bundle = await joinBlobs(JSON.parse(json));
         if (typeof zoneViewer !== "undefined" && zoneViewer.style.display === "flex") closeZone();
-        await applyCloudBundle(JSON.parse(json));
+        await applyCloudBundle(bundle);
         if (previous) {
             // Going back: the next save from this device becomes the cloud save again
             localStorage.removeItem(CLOUD.keys.syncedHash);
@@ -12006,7 +12155,8 @@ async function downloadCloudSave({ previous = "" } = {}) {
 // Runs right after sign-in (or on page load when already signed in)
 async function cloudSyncOnSignIn() {
     try {
-        const meta = await fetchCloudMeta();
+        const meta = await cloudStep(fetchCloudMeta(), 30000, "Checking your account");
+        clearTimeout(cloudSyncRetryTimer); cloudSyncRetryDelay = 0;
         const localGen = localStorage.getItem(CLOUD.keys.syncedGen);
         // Progress the owner gave back to this account (tools/recover_save.mjs)
         if (meta && meta.grant && typeof applyGrant === "function") { try { applyGrant(meta.grant); } catch (e) { console.warn(e); } }
@@ -12021,6 +12171,13 @@ async function cloudSyncOnSignIn() {
         const when = meta.updatedAt && meta.updatedAt.toDate ? meta.updatedAt.toDate().toLocaleString() : "earlier";
         const here = progressSummary(), cloud = meta.sum || null;
         const deviceLess = progressIsLess(here, cloud), cloudLess = progressIsLess(cloud, here);
+        // Load the cloud save without asking, unless this device clearly has more
+        // progress. This device's progress is kept for a week first (keepDeviceCopy),
+        // so it can still be brought back from Account → Earlier cloud saves.
+        if (!cloudLess) {
+            if (!(await downloadCloudSave())) cloudSyncRetry(new Error("Couldn't load your cloud save (slow or no connection)."));
+            return;
+        }
         const choice = await askChoice(
             `Your account has progress saved on ${when}` + (cloud ? ` (${describeProgress(cloud)})` : "") +
             `, and this device has its own (${describeProgress(here)}). Which do you want to keep? The other one is replaced.` +
@@ -12031,7 +12188,7 @@ async function cloudSyncOnSignIn() {
                     { value: "cloud", label: "Load my cloud save", primary: true }
                 ]
             });
-        if (choice === "cloud") await downloadCloudSave();
+        if (choice === "cloud") { if (!(await downloadCloudSave())) cloudSyncRetry(new Error("Couldn't load your cloud save (slow or no connection).")); }
         else if (choice === "device") {
             if (!(await askConfirm(`Your cloud save` + (cloud ? ` (${describeProgress(cloud)})` : "") + ` will be replaced with this device's progress (${describeProgress(here)}).` +
                 (deviceLess ? " This device has LESS progress, so you'd lose some." : "") +
@@ -12042,11 +12199,22 @@ async function cloudSyncOnSignIn() {
             }
             await uploadCloudSave({ force: true });
         }
-        else noteSaveState("conflict"); setCloudStatus("Not synced yet. Open Account to choose which progress to keep.");
+        else { noteSaveState("conflict"); setCloudStatus("Not synced yet. Open Account to choose which progress to keep."); }
     } catch (e) {
         console.error(e);
-        noteSaveState("retry"); setCloudStatus("Couldn't reach the cloud: " + (e.message || e));
+        cloudSyncRetry(e);
     }
+}
+// Checking the account on sign-in failed (slow or no connection): try again
+// in 30 s, then less often, instead of waiting for the next page load
+let cloudSyncRetryTimer = null, cloudSyncRetryDelay = 0;
+function cloudSyncRetry(e) {
+    clearTimeout(cloudSyncRetryTimer);
+    if (!cloudUser) return;
+    cloudSyncRetryDelay = Math.min(cloudSyncRetryDelay ? cloudSyncRetryDelay * 2 : 30000, 5 * 60000);
+    noteSaveState("retry", { error: cloudErrorText(e), retryAt: Date.now() + cloudSyncRetryDelay });
+    setCloudStatus("Couldn't reach the cloud: " + (e.message || e));
+    cloudSyncRetryTimer = setTimeout(() => { cloudSyncRetryTimer = null; cloudSaveState.retryAt = 0; if (cloudUser) cloudSyncOnSignIn(); }, cloudSyncRetryDelay);
 }
 
 // ── Accounts ────────────────────────────────────────────────────────────────
@@ -12467,6 +12635,8 @@ async function cloudDeleteAccount() {
         cloudBusy = true;
         const chunks = await saveDocRef().collection("chunks").get();
         await Promise.all(chunks.docs.map(d => d.ref.delete()));
+        const blobDocs = await saveDocRef().collection("blobs").get().catch(() => ({ docs: [] }));
+        await Promise.all(blobDocs.docs.map(d => d.ref.delete()));
         if (typeof removeMyGameStats === "function") await removeMyGameStats(cloudUser.uid);
         try { await cloudDb.collection("profiles").doc(cloudUser.uid).delete(); } catch (e) {}
         try {
@@ -12759,7 +12929,7 @@ function renderSaveDetails() {
     }
     if (s.phase === "retry") {
         if (s.error) rows.push(["What happened", escapeHtml(s.error), true]);
-        rows.push(["Next try", s.retryAt ? "in " + inText(s.retryAt - now) : "when you're back online"]);
+        rows.push(["Next try", s.retryAt ? "in " + inText(s.retryAt - now) : cloudBusy ? "now (waiting on the cloud)" : navigator.onLine === false ? "when you're back online" : "soon"]);
     }
     if (s.phase === "conflict") rows.push(["Why", "Another device saved to your account after this one. Open Account to pick which progress to keep."]);
     if (s.phase === "paused") rows.push(["Why", "The site used up today's cloud saves (Firebase's daily limit). They start again tomorrow."]);
@@ -12853,6 +13023,7 @@ function openAccountPanel(mode) {
                 <button class="settings-button" id="acct-signout" onclick="cloudSignOut()">Sign out</button>
             </div>
             ${typeof isSiteMod === "function" && isSiteMod() ? `<button class="settings-button" style="margin-bottom:1rem;" onclick="openAdminPanel()">${gnIcon("shield")} ${isSiteAdmin() ? "Admin" : "Mod"} Panel</button>` : ""}
+            ${typeof myPerks === "function" && myPerks() ? `<button class="settings-button" style="margin-bottom:1rem;" onclick="openAbilitiesPanel()">${gnIcon("bolt")} Abilities</button>` : ""}
             <details class="acct-section">
                 <summary>Google sign-in${hasGoogle() ? " (linked)" : ""}</summary>
                 ${hasGoogle()
@@ -17251,16 +17422,19 @@ function drawModTakedowns() {
 //     submissions, and can look at the account list without changing anything.
 //   • Trusted reporter: listed in config/owner-settings.json (needs the owner's
 //     GitHub token on this browser to change).
+//   • Abilities: a document perks/<uid> the owner sets. Lets someone use a few
+//     admin abilities (Jumpscare, Find screen, Boot for up to 15 min), each
+//     with its own cooldown, without being an admin (Abilities panel).
 //   • Suspended: a document bans/<uid>. A suspended account can still play and
 //     keep its cloud save, but can't rate, report or submit games.
 // Every account keeps a small profile (profiles/<uid>: username, joined, last
 // seen) so admins can find it. Passwords and cloud saves are never visible.
 // ═════════════════════════════════════════════════════════════════════════════
-let siteAdminState = { uid: null, admin: false, owner: false, mod: false, banned: null };
+let siteAdminState = { uid: null, admin: false, owner: false, mod: false, banned: null, perks: null, perkUse: {} };
 
 // Profile + role check, run whenever someone signs in
 async function syncMyProfileAndRoles(user) {
-    siteAdminState = { uid: user ? user.uid : null, admin: false, owner: false, mod: false, banned: null };
+    siteAdminState = { uid: user ? user.uid : null, admin: false, owner: false, mod: false, banned: null, perks: null, perkUse: {} };
     if (!user || !cloudDb) return;
     await profileBeat(true);
     try {
@@ -17275,6 +17449,7 @@ async function syncMyProfileAndRoles(user) {
         const m = await cloudDb.collection("mods").doc(user.uid).get();
         siteAdminState.mod = !!(m && m.exists);
     } catch (e) {}
+    await loadMyPerks(user);
     try {
         const b = await cloudDb.collection("bans").doc(user.uid).get();
         if (b && b.exists) {
@@ -17354,6 +17529,24 @@ function isSiteAdmin() { return !!(siteAdminState.admin && cloudUser && siteAdmi
 function isSiteOwner() { return !!(siteAdminState.owner && isSiteAdmin()); }
 // Admins, or mods who aren't suspended
 function isSiteMod() { return isSiteAdmin() || !!(siteAdminState.mod && !siteAdminState.banned && cloudUser && siteAdminState.uid === cloudUser.uid); }
+// Abilities the owner gave this account ({ scare: 30, find: 5, boot: 60 },
+// minutes between uses), or null
+function myPerks() {
+    return cloudUser && siteAdminState.uid === cloudUser.uid && !siteAdminState.banned && siteAdminState.perks && Object.keys(siteAdminState.perks).length ? siteAdminState.perks : null;
+}
+async function loadMyPerks(user = cloudUser) {
+    if (!user || !cloudDb) return;
+    try {
+        const [p, u] = await Promise.all([
+            cloudDb.collection("perks").doc(user.uid).get(),
+            cloudDb.collection("perkUse").doc(user.uid).get().catch(() => null)
+        ]);
+        siteAdminState.perks = p && p.exists ? ((p.data() || {}).a || null) : null;
+        const use = {};
+        if (u && u.exists) for (const [k, v] of Object.entries(u.data() || {})) use[k] = v && v.toMillis ? v.toMillis() : 0;
+        siteAdminState.perkUse = use;
+    } catch (e) {}
+}
 function isSuspended() { return !!(siteAdminState.banned && cloudUser && siteAdminState.uid === cloudUser.uid); }
 function refreshAccountButtonAdmin() {
     if (cloudUser && siteAdminState.uid === cloudUser.uid && typeof getSiteOwnerUid === "function" && cloudUser.uid === getSiteOwnerUid()) {
@@ -17361,7 +17554,7 @@ function refreshAccountButtonAdmin() {
         siteAdminState.admin = true;
     }
     const btn = document.getElementById("accountButton");
-    if (btn) btn.classList.toggle("is-admin", isSiteMod());
+    if (btn) btn.classList.toggle("is-admin", isSiteMod() || !!myPerks());
 }
 
 function fmtDate(v) {
@@ -17420,6 +17613,12 @@ function loadAdminPanel() {
     return adminPanelLoad;
 }
 // Replaced by the real one when js/admin.js loads
+function openAbilitiesPanel(...args) {
+    const stub = openAbilitiesPanel;
+    return loadAdminPanel()
+        .then(() => { if (window.openAbilitiesPanel !== stub) return window.openAbilitiesPanel(...args); })
+        .catch(e => notify("Couldn't open Abilities. Check your connection and try again.", { type: "error" }));
+}
 function openAdminPanel(...args) {
     const stub = openAdminPanel;
     return loadAdminPanel()
@@ -17429,7 +17628,7 @@ function openAdminPanel(...args) {
 
 </script>
 <!-- The Admin Panel loads only when opened (js/admin-core.js); its version is stamped here -->
-<meta name="gn-admin-js" data-src="js/admin.js?v=b941f9b9ea">
+<meta name="gn-admin-js" data-src="js/admin.js?v=e92c4ac3a7">
 <script>/* js/presence.js */
 // ═════════════════════════════════════════════════════════════════════════════
 // "People online now". Each open copy of the site writes a tiny note to the
@@ -18379,10 +18578,14 @@ function scarePos(url) { const b = SCARE_BANK.find(x => x.url === url); return b
 // with one red flash and the scream.
 // Cut to black, and when they think it's over, it flashes once more,
 // inverted. After that the game carries on.
+// mode "instant" skips all of that: the face is just there, right away
+// (a moment later if it's a picture link, so it has a chance to load).
 const SCARE_FREEZE_MS = 800, SCARE_BOX_MS = 1500;
 // The hit comes at a random moment while they're reading the box (no warning)
-function gnJumpscare(pic) {
-    const SCARE_HIT_MS = SCARE_BOX_MS + 1400 + Math.floor(Math.random() * 2600),
+function gnJumpscare(pic, mode) {
+    const instant = mode === "instant";
+    const okPic0 = typeof pic === "string" && /^https:\/\/[^\s"'<>]+$/.test(pic);
+    const SCARE_HIT_MS = instant ? (okPic0 ? 350 : 0) : SCARE_BOX_MS + 1400 + Math.floor(Math.random() * 2600),
         SCARE_CUT_MS = SCARE_HIT_MS + 1700, SCARE_SUB_MS = SCARE_CUT_MS + 550, SCARE_END_MS = SCARE_SUB_MS + 350;
     const face = SCARE_FACES[Math.floor(Math.random() * SCARE_FACES.length)];
     const okPic = typeof pic === "string" && /^https:\/\/[^\s"'<>]+$/.test(pic) ? pic : "";
@@ -18472,8 +18675,10 @@ function gnJumpscare(pic) {
         doc.documentElement.appendChild(el);
         el.querySelectorAll(".hit img").forEach(img => { img.onerror = () => { const l = img.parentNode; if (l) l.innerHTML = own(face); }; });
         const st = el.querySelector("#" + uid);
-        setTimeout(() => st.classList.add("err"), SCARE_FREEZE_MS);
-        setTimeout(() => st.classList.add("box"), SCARE_BOX_MS);
+        if (!instant) {
+            setTimeout(() => st.classList.add("err"), SCARE_FREEZE_MS);
+            setTimeout(() => st.classList.add("box"), SCARE_BOX_MS);
+        }
         setTimeout(() => {
             // The picture didn't load in time: a built-in face instead
             if (okPic && !picReady) el.querySelectorAll(".hit .layer").forEach(l => { l.innerHTML = own(face); });
@@ -18491,7 +18696,7 @@ function gnJumpscare(pic) {
         else if (fs && fs !== document.documentElement) fs.appendChild(build(document));
         else build(document);
     } catch { build(document); }
-    scareSound(SCARE_HIT_MS, SCARE_BOX_MS, SCARE_SUB_MS);
+    scareSound(SCARE_HIT_MS, instant ? -1 : SCARE_BOX_MS, SCARE_SUB_MS);
     // The game carries on afterwards
     setTimeout(() => {
         try { if (gw && gw.__gnPause) gw.__gnPause(false); } catch {}
@@ -18553,7 +18758,7 @@ function getLiveSiteModeAt() {
                 if (!d || until <= Date.now()) { gnHideIdentify(); return; }
                 if (at && at <= shownAt) return;
                 shownAt = at || Date.now();
-                if (d.k === "scare") { if (typeof gnJumpscare === "function") gnJumpscare(typeof d.u === "string" ? d.u : ""); return; }
+                if (d.k === "scare") { if (typeof gnJumpscare === "function") gnJumpscare(typeof d.u === "string" ? d.u : "", d.m === "instant" ? "instant" : "buildup"); return; }
                 gnShowIdentify({ c: String(d.c || ""), n: Number(d.n), until });
             }, () => {});
         }
@@ -19502,6 +19707,10 @@ function ensureStatusPill() {
                 </button>
             </div>
             <ul class="status-list"></ul>
+            <a class="status-full-link" href="https://schswork.github.io/Homework-/" target="_blank" rel="noopener">
+                <span>Full status page</span><small>Every service, check history and benchmarks</small>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </a>
             <div class="status-panel-foot">
                 <span class="status-checked"></span>
                 <button type="button" class="status-hide status-report">Report a problem</button>
