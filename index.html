@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ 5ccf48e5b6. -->
+<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ cb8671fe23. -->
 <html lang="en">
     <head>
 <script>
@@ -3673,6 +3673,61 @@ body:has(#zoneViewer[style*="flex"]) > :is(header, main, footer, #owner-announce
 .close-save .cs-x:hover { background: var(--surface-hover); color: var(--text); }
 @media (prefers-reduced-motion: reduce) { .close-save { transition: opacity 0.2s; transform: none; } .close-save.busy .cs-icon .gi { animation: none; } }
 
+/* Admin Panel → Sessions: custom boot time (a number and minutes / hours / days) */
+.boot-custom { display: inline-flex; gap: 6px; align-items: center; }
+.boot-custom[hidden] { display: none; }
+.boot-custom .boot-amount { width: 5.5em; min-width: 0; flex: none; }
+/* Admin Panel → Sessions: Find screen */
+.find-screen { display: inline-flex; align-items: center; gap: 6px; }
+.find-screen .finder-chip { display: inline-flex; align-items: center; gap: 5px; }
+.find-screen-tag { padding: 4px 10px; border-radius: 999px; font-weight: 800; font-size: 13px; white-space: nowrap; }
+.find-screen-tag[hidden] { display: none; }
+.scare-pics { margin-top: 1rem; }
+.scare-pics summary { cursor: pointer; font-weight: 700; }
+.scare-pics textarea { width: 100%; margin: 0.4rem 0; font-family: ui-monospace, monospace; font-size: 12px; }
+
+/* A game that really broke (game-error.js): red bar on top, "isn't responding" box */
+.gfe-bar { position: fixed; left: 0; right: 0; top: 0; z-index: 2147483000; display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 18px;
+    background: #b00020; color: #fff; font-size: 14.5px; font-weight: 600; box-shadow: 0 4px 20px rgba(0,0,0,.4); animation: gfeIn .25s ease-out; }
+.gfe-bar .gi { width: 20px; height: 20px; flex: none; }
+.gfe-bar span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gfe-bar .gfe-x { flex: none; width: 30px; height: 30px; border: 0; border-radius: 8px; background: rgba(255,255,255,.15); color: #fff; font-size: 20px; line-height: 1; cursor: pointer; }
+@keyframes gfeIn { from { transform: translateY(-100%); } }
+.gfe-wrap { position: fixed; inset: 0; z-index: 2147482999; display: grid; place-items: center; background: rgba(0,0,0,.35); animation: gfeFade .2s ease-out; }
+@keyframes gfeFade { from { opacity: 0; } }
+.gfe-dlg { width: min(460px, 92vw); background: #f3f3f3; color: #1b1b1b; border: 1px solid #9a9a9a; border-radius: 8px; overflow: hidden; box-shadow: 0 18px 60px rgba(0,0,0,.5);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; animation: gfePop .16s ease-out; }
+@keyframes gfePop { from { transform: scale(.96); } }
+.gfe-tt { padding: 9px 14px; font-size: 12px; background: #fff; border-bottom: 1px solid #ddd; color: #444; }
+.gfe-bd { display: flex; gap: 14px; padding: 18px 18px 6px; font-size: 14px; line-height: 1.45; }
+.gfe-ic { flex: none; width: 34px; height: 34px; border-radius: 50%; background: #c42b1c; color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 20px; }
+.gfe-help { margin: 4px 0 6px; color: #333; }
+.gfe-more summary { cursor: pointer; color: #0067c0; font-size: 13px; }
+.gfe-more code { display: block; margin-top: 6px; padding: 8px; background: #fff; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 120px; overflow-y: auto; }
+.gfe-bt { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 12px 16px 16px; }
+.gfe-bt button { font: inherit; font-size: 13px; padding: 6px 16px; border-radius: 4px; border: 1px solid #8a8a8a; background: #fdfdfd; color: #111; cursor: pointer; }
+.gfe-bt button:hover { background: #e9e9e9; }
+.gfe-bt .gfe-reload { background: #0067c0; border-color: #0067c0; color: #fff; }
+.gfe-bt .gfe-reload:hover { background: #0058a6; }
+.gfe-bt button:focus-visible { outline: 2px solid #0067c0; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .gfe-bar, .gfe-wrap, .gfe-dlg { animation: none; } }
+
+/* Site status panel: people online over the last 24 hours (status.js onlineGraph) */
+.status-list .status-graph { display: block; padding: 4px 2px 6px; list-style: none; }
+.status-graph .sg-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12.5px; margin-bottom: 4px; }
+.status-graph .sg-head span { color: var(--text-muted); }
+.status-graph .sg-plot { position: relative; touch-action: none; cursor: crosshair; }
+.status-graph svg { display: block; width: 100%; height: 76px; overflow: visible; }
+.status-graph .sg-area { fill: var(--primary); opacity: 0.18; }
+.status-graph .sg-line { fill: none; stroke: var(--primary); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.status-graph .sg-base { stroke: var(--border); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.status-graph .sg-grid { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; opacity: 0.7; }
+.status-graph .sg-cross { stroke: var(--text-muted); stroke-width: 1; }
+.status-graph .sg-dot { position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 2px var(--surface); pointer-events: none; }
+.status-graph .sg-tip { position: absolute; top: -26px; white-space: nowrap; padding: 3px 8px; border-radius: 6px; background: var(--text); color: var(--bg, #111); font-size: 11.5px; font-weight: 600; pointer-events: none; }
+.status-graph [hidden] { display: none; }
+.status-graph .sg-axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
 </style>
     <script>
     // Each site style's look is in its own file (css/skins/), so only the one in use
@@ -4251,7 +4306,51 @@ function gameErrorHook() {
         if (typeof orig !== "function") return;
         console[k] = function () { keep(k, arguments); return orig.apply(this, arguments); };
     });
+    // ── Did the game actually break? (for the "isn't responding" box) ──────
+    // Most game errors are harmless, so the box only shows when an error is
+    // followed by the game stopping: it had been drawing frames and stopped
+    // within 3 s of the error, or it never started drawing at all. Also when
+    // the graphics are lost (and not restored), or the engine shows a fatal
+    // alert(). Paused games (tab left, jumpscare) don't count.
+    var frames = 0, lastFrame = 0, lastErr = null, fatalSent = false, startAt = Date.now();
+    try {
+        var rafOrig = window.requestAnimationFrame;
+        if (rafOrig) window.requestAnimationFrame = function (cb) {
+            return rafOrig.call(window, function (t) { frames++; lastFrame = Date.now(); return cb(t); });
+        };
+    } catch (e) {}
+    var paused = function () { try { return !!(window.__gnPaused && window.__gnPaused()) || document.hidden; } catch (e) { return false; } };
+    var fatal = function (kind, message) {
+        if (fatalSent) return;
+        fatalSent = true;
+        try { if (window.parent && window.parent !== window && window.parent.__gnmathGameFatal) window.parent.__gnmathGameFatal({ kind: kind, message: String(message || "").slice(0, 300) }); } catch (e) {}
+    };
+    var checkAfterError = function () {
+        setTimeout(function () {
+            if (fatalSent || paused() || !lastErr) return;
+            var now = Date.now();
+            if (frames > 30 && now - lastFrame > 2500 && lastFrame < lastErr.at + 3000) fatal("stopped", lastErr.message);
+        }, 3200);
+        setTimeout(function () {
+            if (fatalSent || paused() || !lastErr) return;
+            // Only for engine games whose screen never got going (a canvas still
+            // at its blank 300×150, or none): page games without a canvas
+            // (Cookie Clicker…) don't draw frames and are fine
+            var cs = Array.prototype.slice.call(document.querySelectorAll("canvas"));
+            var blank = cs.every(function (c) { return c.width <= 300 && c.height <= 150; });
+            var engine = !!(window.createUnityInstance || window.UnityLoader || window.unityFramework || window.Godot || window.Engine || window.Module || window.C3_RUNTIME || window.cr_getC2Runtime || window.RufflePlayer) ||
+                Array.prototype.some.call(document.scripts, function (sc) { return /unity|godot|loader\.js|\.wasm|c3runtime|construct|ruffle|phaser|pixi/i.test(sc.src || ""); });
+            if (frames < 3 && Date.now() - startAt > 9000 && blank && engine && !document.querySelector("video")) fatal("start", lastErr.message);
+        }, Math.max(0, 9500 - (Date.now() - startAt)));
+    };
+    document.addEventListener("webglcontextlost", function (e) {
+        var c = e.target;
+        setTimeout(function () { try { if (c && c.isConnected && (c.getContext("webgl2") || c.getContext("webgl") || {}).isContextLost && (c.getContext("webgl2") || c.getContext("webgl")).isContextLost()) fatal("graphics", "The game's graphics (WebGL) stopped working."); } catch (err) {} }, 2500);
+    }, true);
+    window.__gnFatal = fatal;
     var up = function (kind, message, stack) {
+        lastErr = { at: Date.now(), message: String(message || "") };
+        checkAfterError();
         if (sent >= 5) return;
         sent++;
         try { if (window.parent && window.parent !== window && window.parent.__gnmathGameError) window.parent.__gnmathGameError({ kind: kind, message: String(message || "").slice(0, 500), stack: String(stack || "").slice(0, 1500) }); } catch (e) {}
@@ -4274,7 +4373,11 @@ function gameErrorHook() {
     var origAlert = window.alert;
     window.alert = function (msg) {
         keep("alert", [msg]);
-        if (/abort\(|error|exception|failed|out of memory|cannot|could not|unable/i.test(String(msg))) up("alert", msg, "");
+        if (/abort\(|error|exception|failed|out of memory|cannot|could not|unable/i.test(String(msg))) {
+            up("alert", msg, "");
+            // The site's own box instead of the browser's plain one
+            if (window.parent && window.parent !== window && window.parent.__gnmathGameFatal && !fatalSent) { fatal("crash", msg); return; }
+        }
         return origAlert.apply(this, arguments);
     };
 }
@@ -6681,7 +6784,7 @@ function filterZones() { applyFilters(); }
 // a fake "Download" ad pushing a browser-hijacker extension, plus an anti-adblock
 // trap that wipes the page if its ad box is removed. We strip the loader before
 // the game runs (so the trap never starts) and block known ad hosts as a backup.
-const AD_HOST_PATTERN = "(^|\\.)(googletagmanager\\.com|google-analytics\\.com|analytics\\.google\\.com|r9x\\.in|googlesyndication\\.com|doubleclick\\.net|adnxs\\.com|adsterra\\.com|highperformanceformat\\.com|effectivegatecpm\\.com|profitableratecpm\\.com|propellerads\\.com|popads\\.net|a-ads\\.com|mc\\.yandex\\.ru|yandex\\.ru|yandex\\.net|igroutka\\.ru|id\\.net|playtomic\\.com|stats\\.unity3d\\.com|cloud\\.unity3d\\.com|unblockedgamesroblox\\.weebly\\.com|gamemonetize\\.com|gamedistribution\\.com|cpmstar\\.com|adinplay\\.com|api\\.adinplay\\.com|imasdk\\.googleapis\\.com|poki\\.io|poki-gdn\\.com|crazygames\\.com|improvedigital\\.com|prebid\\.org|clarity\\.ms|hotjar\\.com|statcounter\\.com|histats\\.com|cloudflareinsights\\.com|a\\.poki\\.com|poki-cdn\\.com|amazon-adsystem\\.com|gameanalytics\\.com|ad4game\\.com|getclicky\\.com|arc\\.io|mochibot\\.com|mochiads\\.com|cpmstar\\.com|ngads\\.com)$";
+const AD_HOST_PATTERN = "(^|\\.)(googletagmanager\\.com|google-analytics\\.com|analytics\\.google\\.com|r9x\\.in|googlesyndication\\.com|doubleclick\\.net|adnxs\\.com|adsterra\\.com|highperformanceformat\\.com|effectivegatecpm\\.com|profitableratecpm\\.com|propellerads\\.com|popads\\.net|a-ads\\.com|mc\\.yandex\\.ru|yandex\\.ru|yandex\\.net|igroutka\\.ru|id\\.net|playtomic\\.com|stats\\.unity3d\\.com|cloud\\.unity3d\\.com|unblockedgamesroblox\\.weebly\\.com|gamemonetize\\.com|gamedistribution\\.com|cpmstar\\.com|adinplay\\.com|api\\.adinplay\\.com|imasdk\\.googleapis\\.com|poki\\.io|poki-gdn\\.com|crazygames\\.com|improvedigital\\.com|prebid\\.org|clarity\\.ms|hotjar\\.com|statcounter\\.com|histats\\.com|cloudflareinsights\\.com|a\\.poki\\.com|poki-cdn\\.com|amazon-adsystem\\.com|gameanalytics\\.com|ad4game\\.com|getclicky\\.com|arc\\.io|mochibot\\.com|mochiads\\.com|cpmstar\\.com|ngads\\.com|gamemonkey\\.org|azerioncircle\\.com|improvedigital\\.com|headerlift\\.com)$";
 
 function isObfuscatedAdScript(code) {
     if (/r9x\.in/i.test(code)) return true;
@@ -7468,6 +7571,27 @@ function crossOriginWorkerHook() {
 // so games that call them stopped at a black screen. This stand-in has every
 // call succeed at once: ad breaks end right away and rewarded ads give the reward.
 // A game's own stand-in or the real SDK, if it loads, replaces it.
+// GameDistribution games load GD's ad SDK (often from a copy on jsDelivr, which
+// gets past the ad-host list) and then wait for its events. Its loader is
+// blocked in the guard above (script id "gamedistribution-jssdk"), and this
+// answers like the SDK would: ready at once, and every "ad" finishes straight
+// away (paused → started again; rewarded ads count as watched).
+function gdSdkStub() {
+    var emit = function (name) { try { var o = window.GD_OPTIONS; if (o && typeof o.onEvent === "function") o.onEvent({ name: name, message: "", status: "success" }); } catch (e) {} };
+    var sdk = {
+        AdType: { Rewarded: "rewarded", Interstitial: "interstitial", Display: "display", Midroll: "midroll" },
+        showAd: function (type) {
+            emit("SDK_GAME_PAUSE");
+            return new Promise(function (res) { setTimeout(function () { if (type === "rewarded") emit("SDK_REWARDED_WATCH_COMPLETE"); emit("SDK_GAME_START"); res(); }, 60); });
+        },
+        preloadAd: function () { return Promise.resolve(); },
+        cancelAd: function () { return Promise.resolve(); },
+        showBanner: function () {}, openConsole: function () {}
+    };
+    try { Object.defineProperty(window, "gdsdk", { configurable: true, get: function () { return sdk; }, set: function () {} }); } catch (e) { window.gdsdk = sdk; }
+    var ready = function () { emit("SDK_READY"); emit("SDK_GAME_START"); };
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { setTimeout(ready, 0); }); else setTimeout(ready, 0);
+}
 function portalSdkStub() {
     var make = function () {
         var fn = function () {
@@ -7522,6 +7646,33 @@ function construct3Hook() {
         Object.defineProperty(window, "RuntimeInterface", { configurable: true, enumerable: true,
             get: function () { return RI; }, set: function (C) { RI = typeof C === "function" ? wrap(C) : C; } });
     } catch (e) {}
+}
+// Some engines' pages (Defold: Dan The Man) pin <body> in place with no size of
+// its own and let the game hang out of it. Real graphics chips draw that fine,
+// but when the browser draws 3D in software (no graphics driver: "Microsoft
+// Basic Render Driver", many Chromebooks, blocked or old graphics chips) it
+// clips the game to that empty box and the screen stays white. Give any such
+// pinned box around a game canvas the whole window; it looks the same either way.
+function softwareDrawHook() {
+    function fix() {
+        try {
+            var list = document.getElementsByTagName("canvas");
+            for (var i = 0; i < list.length; i++) {
+                var c = list[i];
+                if (c.offsetWidth < 100 || c.offsetHeight < 100) continue;
+                for (var el = c.parentElement; el && el !== document.documentElement; el = el.parentElement) {
+                    if (getComputedStyle(el).position !== "fixed") continue;
+                    var r = el.getBoundingClientRect();
+                    if (r.width >= 2 && r.height >= 2) continue;
+                    el.style.top = el.style.left = el.style.right = el.style.bottom = "0";
+                }
+            }
+        } catch (e) {}
+    }
+    document.addEventListener("DOMContentLoaded", fix);
+    window.addEventListener("load", fix);
+    window.addEventListener("resize", fix);
+    [1000, 3000, 8000, 20000].forEach(function (t) { setTimeout(fix, t); });
 }
 function cleanGameHtml(html) {
     if (typeof html !== "string") return html;
@@ -7596,7 +7747,7 @@ function cleanGameHtml(html) {
     const guard = `<script>window.dataLayer=[];window.gtag=function(){};window.ga=function(){};window._gaq=window._gaq||[];(function(){var bad=new RegExp(${JSON.stringify(AD_HOST_PATTERN)},"i");` +
         `function blocked(u){try{return bad.test(new URL(u,location.href).hostname)}catch(e){return false}}` +
         `[window.HTMLScriptElement,window.HTMLIFrameElement].forEach(function(C){if(!C)return;var d=Object.getOwnPropertyDescriptor(C.prototype,"src");` +
-        `if(!d||!d.set)return;Object.defineProperty(C.prototype,"src",{configurable:true,enumerable:d.enumerable,get:d.get,set:function(v){if(blocked(v))return;d.set.call(this,v)}})});` +
+        `if(!d||!d.set)return;Object.defineProperty(C.prototype,"src",{configurable:true,enumerable:d.enumerable,get:d.get,set:function(v){if(blocked(v)||this.id==="gamedistribution-jssdk")return;d.set.call(this,v)}})});` +
         `var sa=Element.prototype.setAttribute;Element.prototype.setAttribute=function(n,v){if(/^src$/i.test(n)&&(this instanceof HTMLScriptElement||this instanceof HTMLIFrameElement)&&blocked(v))return;return sa.apply(this,arguments)};` +
         `try{var of=window.fetch;if(of)window.fetch=function(u){try{if(blocked(typeof u==="string"?u:u&&u.url))return Promise.resolve(new Response("",{status:204}))}catch(e){}return of.apply(this,arguments)};` +
         `var xo=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){if(blocked(u)){arguments[1]="data:,";}return xo.apply(this,arguments)};` +
@@ -7615,10 +7766,12 @@ function cleanGameHtml(html) {
         (typeof gameErrorHook === "function" ? `<script>(${gameErrorHook.toString()})();<\/script>` : "") +
         (typeof gameFitHook === "function" ? `<script>(${gameFitHook.toString()})();<\/script>` : "") +
         (/RuntimeInterface|c3runtime|supportcheck\.js/.test(html) ? `<script>(${construct3Hook.toString()})();<\/script>` : "") +
+        (/GD_OPTIONS|gamedistribution-jssdk/.test(html) ? `<script>(${gdSdkStub.toString()})();<\/script>` : "") +
         (/PokiSDK|poki-sdk|CrazyGames|gdsdk/.test(html) ? `<script>(${portalSdkStub.toString()})();<\/script>` : "") +
         (/YaGames/.test(html) ? `<script>(${yandexSdkStub.toString()})();<\/script>` : "") +
         (/adBreak|adConfig|adsbygoogle/.test(html) ? `<script>(${h5AdsStub.toString()})();<\/script>` : "") +
         `<script>(${crossOriginWorkerHook.toString()})();<\/script>` +
+        `<script>(${softwareDrawHook.toString()})();<\/script>` +
         `<script>(${gameStorageHook.toString()})();<\/script>` +
         (typeof gameMuteHook === "function" ? `<script>(${gameMuteHook.toString()})();<\/script>` : "") +
         (typeof gamePauseHook === "function" ? `<script>(${gamePauseHook.toString()})();<\/script>` : "") +
@@ -7881,6 +8034,7 @@ function aboutBlank() {
 }
 
 function closeZone() {
+    if (typeof closeGameFatal === "function") closeGameFatal();
     zoneOpenToken++;
     stopPlaytime();
     if (typeof closeGameMenu === "function") closeGameMenu();
@@ -11308,7 +11462,37 @@ function isCloudExcludedStorageKey(key) {
 function isCloudExcludedDb(name) {
     // Firebase's own login/cache databases, Unity's download cache (game files, not progress),
     // and the site's own save backups (game-extras.js), which would only make cloud saves bigger
-    return /^firebase|^firestore\//i.test(name) || name === "UnityCache" || name === "gnmath-backups";
+    // Also emulators' downloaded cores, ROMs and BIOS files (EmulatorJS keeps saves in its own "states" database, which stays)
+    return /^firebase|^firestore\//i.test(name) || name === "UnityCache" || name === "gnmath-backups" || /^EmulatorJS-(core|cores|roms|bios)$/i.test(name);
+}
+// A save bigger than the cloud can hold used to not save at all. Now the
+// biggest pieces of game data are left out (they stay on this device) until
+// the rest fits: single entries, biggest first, so a game's huge downloaded
+// files go before anyone's small save files (Unity games all share one
+// "/idbfs" database, so leaving out whole databases would lose every Unity save).
+async function packCloudBundle(bundle) {
+    let json = JSON.stringify(bundle), packed = await gzipToB64(json);
+    if (packed.length <= CLOUD.maxChars) return { packed, left: [] };
+    const ratio = packed.length / json.length;
+    const all = [];
+    bundle.indexedDB.forEach((db, di) => db.stores.forEach((st, si) => st.entries.forEach((e, ei) => all.push({ di, si, ei, n: JSON.stringify(e).length }))));
+    all.sort((a, b) => b.n - a.n);
+    const drop = new Set(), key = x => `${x.di}/${x.si}/${x.ei}`;
+    let raw = json.length, k = 0;
+    for (let tries = 0; tries < 6 && packed.length > CLOUD.maxChars && k < all.length; tries++) {
+        do { raw -= all[k].n; drop.add(key(all[k])); k++; } while (k < all.length && raw * ratio > CLOUD.maxChars * 0.85);
+        const slim = { ...bundle, indexedDB: bundle.indexedDB.map((db, di) => ({ ...db, stores: db.stores.map((st, si) => ({ ...st, entries: st.entries.filter((e, ei) => !drop.has(`${di}/${si}/${ei}`)) })) })) };
+        json = JSON.stringify(slim);
+        packed = await gzipToB64(json);
+    }
+    // What was left out, by database
+    const by = new Map();
+    for (const x of all.slice(0, k)) {
+        const name = bundle.indexedDB[x.di].name, cur = by.get(name) || { name, files: 0, bytes: 0 };
+        cur.files++; cur.bytes += x.n * ratio; by.set(name, cur);
+    }
+    const left = [...by.values()].map(b => ({ name: b.name, files: b.files, mb: Math.max(0.1, Math.round(b.bytes / 1e5) / 10) }));
+    return { packed, left };
 }
 
 // ── Value encoding (IndexedDB can hold binary data that JSON can't) ──────────
@@ -11645,6 +11829,19 @@ window.addEventListener("online", () => {
 // Firebase waits forever for a reply when the connection drops (school Wi-Fi),
 // which left "Saving…" stuck. Each step gives up after a while instead, and the
 // save is tried again like any other failure.
+// What went wrong, in words: Firebase's own message, or what its code means
+function cloudErrorText(e) {
+    const code = String((e && e.code) || "").replace(/^firestore\//, "");
+    const msg = String((e && e.message) || (e && typeof e !== "object" ? e : "") || "").trim();
+    const known = {
+        "permission-denied": "Your account isn't allowed to save right now. Signing out and back in usually fixes it.",
+        "unauthenticated": "You're signed out of the cloud. Sign in again to save.",
+        "unavailable": "Couldn't reach the cloud (no connection).",
+        "deadline-exceeded": "The cloud took too long to answer (slow or no connection)."
+    };
+    const said = known[code] || msg || "Something went wrong.";
+    return code && !said.includes(code) ? `${said} (${code})` : said;
+}
 function cloudStep(promise, ms, what) {
     let t;
     return Promise.race([promise, new Promise((_, rej) => { t = setTimeout(() => rej(Object.assign(new Error(`${what} took too long (slow or no connection).`), { code: "deadline-exceeded" })), ms); })])
@@ -11690,11 +11887,13 @@ async function uploadCloudSaveNow({ force = false, background = false } = {}) {
             return true;
         }
         noteSaveState("saving", { step: "Packing your progress" });
-        const packed = await gzipToB64(json);
+        const { packed, left } = await packCloudBundle(JSON.parse(json));
         if (packed.length > CLOUD.maxChars) {
-            noteSaveState("error"); setCloudStatus(`Save is too big for the cloud (${(packed.length / 1e6).toFixed(1)} MB).`);
+            noteSaveState("error", { error: `The save is too big for the cloud (${(packed.length / 1e6).toFixed(1)} MB, the limit is ${(CLOUD.maxChars / 1e6).toFixed(0)} MB) even without game data. Your progress is safe on this device.` });
+            setCloudStatus(`Save is too big for the cloud (${(packed.length / 1e6).toFixed(1)} MB).`);
             return false;
         }
+        cloudSaveState.left = left;
         const gen = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
         const chunkCount = Math.max(1, Math.ceil(packed.length / CLOUD.chunkChars));
         const chunks = saveDocRef().collection("chunks");
@@ -11723,7 +11922,8 @@ async function uploadCloudSaveNow({ force = false, background = false } = {}) {
             if (old.gen === gen || kept.some(k => k.gen === old.gen)) continue;
             for (let i = 0; i < (old.chunkCount || 0); i++) chunks.doc(`${old.gen}_${i}`).delete().catch(() => {});
         }
-        noteSaveState("ok", { size: packed.length, sum }); setCloudStatus("Saved to cloud — " + new Date().toLocaleTimeString());
+        noteSaveState("ok", { size: packed.length, sum, left });
+        setCloudStatus("Saved to cloud — " + new Date().toLocaleTimeString() + (left.length ? `. Left out (too big, kept on this device): ${left.map(l => `${l.files} item${l.files === 1 ? "" : "s"} from ${l.name} (${l.mb} MB)`).join(", ")}` : ""));
         return true;
     } catch (e) {
         console.error("Cloud save failed", e);
@@ -11736,7 +11936,7 @@ async function uploadCloudSaveNow({ force = false, background = false } = {}) {
         } else {
             // Signed out or not allowed won't fix itself; anything else gets tried again
             cloudFailRetryable = !/permission-denied|unauthenticated/.test(String(e && e.code));
-            noteSaveState(cloudFailRetryable ? "retry" : "error", { error: (e && e.message) || String(e) }); setCloudStatus("Cloud save failed: " + (e.message || e) + (cloudFailRetryable ? " Trying again soon; your progress is safe on this device." : ""));
+            noteSaveState(cloudFailRetryable ? "retry" : "error", { error: cloudErrorText(e) }); setCloudStatus("Cloud save failed: " + (e.message || e) + (cloudFailRetryable ? " Trying again soon; your progress is safe on this device." : ""));
         }
         return false;
     } finally {
@@ -11750,7 +11950,7 @@ async function keepDeviceCopy() {
     const sum = progressSummary();
     if ((sum.level || 0) <= 1 && (sum.playSec || 0) < 600) return;
     try {
-        const packed = await gzipToB64(JSON.stringify(await collectCloudBundle()));
+        const { packed } = await packCloudBundle(await collectCloudBundle());
         if (packed.length > CLOUD.maxChars) return;
         const gen = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + "d";
         const chunkCount = Math.max(1, Math.ceil(packed.length / CLOUD.chunkChars));
@@ -12563,9 +12763,10 @@ function renderSaveDetails() {
     }
     if (s.phase === "conflict") rows.push(["Why", "Another device saved to your account after this one. Open Account to pick which progress to keep."]);
     if (s.phase === "paused") rows.push(["Why", "The site used up today's cloud saves (Firebase's daily limit). They start again tomorrow."]);
-    if (s.phase === "error" && s.error) rows.push(["What happened", escapeHtml(s.error), true]);
+    if (s.phase === "error") rows.push(["What happened", escapeHtml(s.error || "The cloud turned the save down without saying why. Your progress is safe on this device."), true]);
     rows.push(["Last cloud save", s.lastAt ? `${new Date(s.lastAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} (${agoText(now - s.lastAt)})` : "not yet on this device"]);
     if (s.size) rows.push(["Size", mb(s.size)]);
+    if (s.left && s.left.length) rows.push(["Too big for the cloud", s.left.map(l => `${l.files} item${l.files === 1 ? "" : "s"} from ${l.name} (${l.mb} MB)`).join(", ") + ". They stay on this device; the rest is in the cloud. These are usually a game's downloaded files, not saves."]);
     if (s.sum && typeof describeProgress === "function") rows.push(["What's saved", describeProgress(s.sum) + ", settings, favorites and game saves"]);
     if (cloudAutosaveTimer && s.phase !== "conflict" && s.phase !== "paused" && s.nextAt) rows.push(["Next autosave", "in " + inText(s.nextAt - now) + " (and when you close the game)"]);
     if (s.phase !== "conflict") rows.push(["On this device", "Your progress is always kept here too"]);
@@ -17228,7 +17429,7 @@ function openAdminPanel(...args) {
 
 </script>
 <!-- The Admin Panel loads only when opened (js/admin-core.js); its version is stamped here -->
-<meta name="gn-admin-js" data-src="js/admin.js?v=811e442a31">
+<meta name="gn-admin-js" data-src="js/admin.js?v=b941f9b9ea">
 <script>/* js/presence.js */
 // ═════════════════════════════════════════════════════════════════════════════
 // "People online now". Each open copy of the site writes a tiny note to the
@@ -17740,6 +17941,14 @@ function renderTop10() {
     const shared = () => { try { return JSON.parse(localStorage.getItem(LIVE.sharedKey) || "null") || {}; } catch { return {}; } };
     const setShared = v => { try { localStorage.setItem(LIVE.sharedKey, JSON.stringify(v)); } catch {} };
     const intOf = v => Number(v?.integerValue ?? v?.doubleValue ?? 0) || 0;
+    // People online over the last day, for the graph in the site status panel.
+    // Kept in live/now as h: "minute:count,minute:count…" (minutes since 1970,
+    // in base 36), one entry per round, so reading it costs nothing extra.
+    const HIST_MS = 24 * 3600000;
+    const parseHist = str => String(str || "").split(",").map(x => x.split(":")).filter(x => x.length === 2)
+        .map(([m, n]) => [parseInt(m, 36) * 60000, parseInt(n, 36)]).filter(([t, n]) => t > 0 && n >= 0 && Date.now() - t < HIST_MS);
+    const packHist = list => list.map(([t, n]) => Math.floor(t / 60000).toString(36) + ":" + n.toString(36)).join(",");
+    const setHist = list => { window.gnOnlineHistory = list; if (typeof updateSiteStatus === "function") updateSiteStatus(); };
 
     async function req(url, opts) {
         const res = await fetch(url, opts);
@@ -17758,7 +17967,9 @@ function renderTop10() {
         const games = new Map(Object.entries(f.games?.mapValue?.fields || {}).map(([k, v]) => [k, intOf(v)]).filter(([, n]) => n > 0));
         const at = Date.parse(f.at?.timestampValue || doc.updateTime) || Date.now();
         liveNow = { online: intOf(f.online), games, at, updateTime: doc.updateTime };
-        setShared({ readAt: Date.now(), online: liveNow.online, games: [...games], at, updateTime: doc.updateTime });
+        const hist = parseHist(f.h?.stringValue);
+        setShared({ readAt: Date.now(), online: liveNow.online, games: [...games], at, updateTime: doc.updateTime, h: packHist(hist) });
+        setHist(hist);
         if (liveNow.online > 0) {
             window.gnActiveUsers = { count: Math.max(1, liveNow.online), at: Date.now(), error: null };
             if (typeof updateSiteStatus === "function") updateSiteStatus();
@@ -17788,8 +17999,11 @@ function renderTop10() {
         const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 150);
         const gameFields = Object.fromEntries(top.map(([id, n]) => [id, { integerValue: String(n) }]));
         const week = liveWeekId();
+        const hist = parseHist(prev?.fields?.h?.stringValue);
+        hist.push([Date.now(), docs.length]);
+        while (hist.length > 400) hist.shift();
         const writes = [{
-            update: { name: `${ROOT}/live/now`, fields: { online: { integerValue: String(docs.length) }, games: { mapValue: { fields: gameFields } } } },
+            update: { name: `${ROOT}/live/now`, fields: { online: { integerValue: String(docs.length) }, games: { mapValue: { fields: gameFields } }, h: { stringValue: packHist(hist) } } },
             updateTransforms: [{ fieldPath: "at", setToServerValue: "REQUEST_TIME" }],
             currentDocument: prev && prev.updateTime ? { updateTime: prev.updateTime } : { exists: false }
         }];
@@ -17812,7 +18026,8 @@ function renderTop10() {
             try { if (fbOn()) fbCount(0, 1); await commit(writes[1]); } catch (e) { console.info("Weekly count not saved:", e.message || e); }
         }
         liveNow = { online: docs.length, games: new Map(top), at: Date.now(), updateTime: null };
-        setShared({ readAt: Date.now(), online: docs.length, games: top, at: Date.now(), updateTime: null });
+        setShared({ readAt: Date.now(), online: docs.length, games: top, at: Date.now(), updateTime: null, h: packHist(hist) });
+        setHist(hist);
         window.gnActiveUsers = { count: Math.max(1, docs.length), at: Date.now(), error: null };
         if (typeof updateSiteStatus === "function") updateSiteStatus();
         // The week document changed: refresh the Top 10 soon
@@ -17830,6 +18045,7 @@ function renderTop10() {
             if (Date.now() - (s.readAt || 0) < readEvery) {
                 // Another tab read it recently
                 if (s.games) { liveNow = { online: s.online, games: new Map(s.games), at: s.at, updateTime: s.updateTime }; applyLiveBadges(); }
+                if (s.h && !window.gnOnlineHistory) setHist(parseHist(s.h));
             } else {
                 const doc = await getDoc("live/now");
                 if (doc) setNow(doc); else setShared({ ...s, readAt: Date.now() });
@@ -17874,6 +18090,416 @@ function renderTop10() {
 })();
 
 </script>
+<script>/* js/game-error.js */
+// ═════════════════════════════════════════════════════════════════════════════
+// When a game really breaks: a red bar across the top and an "isn't
+// responding" box with what to do (Reload game / Report it / Keep waiting).
+// The game page tells us (gameErrorHook in errors.js) only when an error is
+// followed by the game stopping, it never starts, its graphics are lost, or
+// its engine shows a fatal alert — not for the many harmless errors games log.
+// Once per game opened; it goes away by itself if the game was closed.
+// ═════════════════════════════════════════════════════════════════════════════
+const GAME_FATAL_TEXT = {
+    stopped: ["isn't responding", "The game stopped right after an error. Reloading it usually fixes this."],
+    start: ["couldn't start", "The game hit an error while loading and never started. Reloading it may fix this; if it keeps happening, report it so it can be fixed."],
+    graphics: ["lost its graphics", "The game's 3D graphics (WebGL) stopped working. This happens when the computer runs low on graphics memory. Reloading the game usually brings them back; closing other tabs helps."],
+    crash: ["crashed", "The game's engine hit an error it couldn't recover from. Reloading it may fix this."]
+};
+let gameFatalShownFor = null;
+function closeGameFatal() {
+    document.querySelectorAll(".gfe-bar, .gfe-wrap").forEach(el => el.remove());
+}
+window.__gnmathGameFatal = function (ev) {
+    try {
+        const zone = typeof currentZone === "function" ? currentZone() : null;
+        if (!zone || zoneViewer.style.display === "none") return;
+        // Once per game page (a reload gets a new page, so it can show again)
+        let win = null; try { win = zoneFrame.contentWindow; } catch {}
+        if (!win || gameFatalShownFor === win) return;
+        gameFatalShownFor = win;
+        const [what, help] = GAME_FATAL_TEXT[ev.kind] || GAME_FATAL_TEXT.crash;
+        const detail = String(ev.message || "").trim();
+        closeGameFatal();
+        // Red bar at the top
+        const bar = document.createElement("div");
+        bar.className = "gfe-bar";
+        bar.setAttribute("role", "alert");
+        bar.innerHTML = `${gnIcon("warning")}<span></span><button type="button" class="gfe-x" aria-label="Hide">×</button>`;
+        bar.querySelector("span").textContent = `Error: ${zone.name} ${what}${detail ? ` (${detail.slice(0, 90)}${detail.length > 90 ? "…" : ""})` : ""}.`;
+        bar.querySelector(".gfe-x").onclick = closeGameFatal;
+        // The box
+        const wrap = document.createElement("div");
+        wrap.className = "gfe-wrap";
+        wrap.innerHTML = `<div class="gfe-dlg" role="alertdialog" aria-modal="false" aria-labelledby="gfe-title">
+            <div class="gfe-tt"></div>
+            <div class="gfe-bd"><div class="gfe-ic">!</div><div><b id="gfe-title"></b><p class="gfe-help"></p>
+                ${detail ? `<details class="gfe-more"><summary>What the game said</summary><code></code></details>` : ""}</div></div>
+            <div class="gfe-bt"><button type="button" class="gfe-wait">Keep waiting</button><button type="button" class="gfe-report">Report it</button><button type="button" class="gfe-reload">Reload game</button></div>
+        </div>`;
+        wrap.querySelector(".gfe-tt").textContent = zone.name;
+        wrap.querySelector("#gfe-title").textContent = `${zone.name} ${what}`;
+        wrap.querySelector(".gfe-help").textContent = help;
+        if (detail) wrap.querySelector(".gfe-more code").textContent = detail;
+        wrap.querySelector(".gfe-wait").onclick = closeGameFatal;
+        wrap.querySelector(".gfe-reload").onclick = () => { closeGameFatal(); openZone(zone); };
+        wrap.querySelector(".gfe-report").onclick = () => {
+            closeGameFatal();
+            if (typeof openFeedback !== "function") { if (typeof reportCurrentZone === "function") reportCurrentZone(); return; }
+            openFeedback("bug", { zone });
+            // Filled in with what happened (they can change it)
+            setTimeout(() => {
+                const t = document.getElementById("fb-title"), d = document.getElementById("fb-details");
+                if (t && !t.value) t.value = `${zone.name} ${what}`.slice(0, 80);
+                if (d && !d.value) d.value = `The site showed "${zone.name} ${what}".${detail ? " The game said: " + detail : ""}`.slice(0, 1000);
+            }, 50);
+        };
+        // Inside the game area, so it's there in fullscreen too
+        const host = document.fullscreenElement && document.fullscreenElement.tagName !== "IFRAME" ? document.fullscreenElement : document.body;
+        host.append(bar, wrap);
+        try { if (document.fullscreenElement && document.fullscreenElement.tagName === "IFRAME") document.exitFullscreen(); } catch {}
+        wrap.querySelector(".gfe-reload").focus({ preventScroll: true });
+    } catch (e) { console.warn("Couldn't show the game error box", e); }
+};
+
+</script>
+<script>/* js/identify.js */
+// ═════════════════════════════════════════════════════════════════════════════
+// "Find screen" (Admin Panel → Sessions): to tell which computer in the room is
+// which session (same Chromebooks, same network), an admin can light up that
+// session's screen. For 30 seconds it gets a thick glowing border in a color
+// and a big "Screen 47", which the admin also sees next to the session, so
+// they can walk around and spot it. The game keeps working underneath.
+//
+// The admin writes identify/<session id> { c: color, n: number, until, by, at };
+// realtime.js listens to this session's doc and calls gnShowIdentify().
+// ═════════════════════════════════════════════════════════════════════════════
+const IDENTIFY_COLORS = {
+    red: ["Red", "#ef4444"], orange: ["Orange", "#f97316"], yellow: ["Yellow", "#facc15"], green: ["Green", "#22c55e"],
+    cyan: ["Light blue", "#22d3ee"], blue: ["Blue", "#3b82f6"], purple: ["Purple", "#a855f7"], pink: ["Pink", "#ec4899"]
+};
+const IDENTIFY_MS = 30000;
+
+let identifyTimer = null;
+function gnHideIdentify() {
+    clearTimeout(identifyTimer);
+    document.querySelectorAll(".gn-identify").forEach(el => el.remove());
+    try {
+        const f = typeof zoneFrame !== "undefined" && zoneFrame && zoneFrame.contentDocument;
+        if (f) f.querySelectorAll(".gn-identify").forEach(el => el.remove());
+    } catch {}
+}
+function gnShowIdentify({ c, n, until }) {
+    const col = IDENTIFY_COLORS[c];
+    const left = Math.min(IDENTIFY_MS + 5000, (until || 0) - Date.now());
+    if (!col || !(n >= 1 && n <= 99) || left <= 0) return;
+    gnHideIdentify();
+    const [name, hex] = col;
+    const dark = c === "yellow" || c === "cyan";
+    const build = doc => {
+        const el = doc.createElement("div");
+        el.className = "gn-identify";
+        el.setAttribute("role", "status");
+        el.setAttribute("aria-live", "polite");
+        // Inline styles: this may go inside a game page, where the site's CSS isn't
+        el.style.cssText = `position:fixed;inset:0;z-index:2147483646;pointer-events:none;box-shadow:inset 0 0 0 14px ${hex}, inset 0 0 60px 18px ${hex}88;` +
+            `animation:gnIdPulse 1s ease-in-out infinite;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;`;
+        el.innerHTML = `<style>@keyframes gnIdPulse{50%{opacity:.55}}@media (prefers-reduced-motion:reduce){.gn-identify{animation:none!important}}</style>` +
+            `<div style="position:absolute;left:50%;top:28px;transform:translateX(-50%);display:flex;align-items:center;gap:16px;padding:14px 26px 14px 18px;border-radius:20px;` +
+            `background:${hex};color:${dark ? "#111" : "#fff"};box-shadow:0 12px 40px rgba(0,0,0,.45);white-space:nowrap;">` +
+            `<span style="font-size:64px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;">${n}</span>` +
+            `<span style="display:flex;flex-direction:column;gap:2px;"><b style="font-size:22px;">${name} screen ${n}</b>` +
+            `<span style="font-size:14px;opacity:.85;">A mod is finding this computer. Nothing's wrong.</span></span></div>`;
+        return el;
+    };
+    document.body.appendChild(build(document));
+    // A game in fullscreen covers the page, so it goes inside the game too
+    try {
+        const fs = document.fullscreenElement || document.webkitFullscreenElement;
+        if (fs && fs.tagName === "IFRAME" && fs.contentDocument) fs.contentDocument.documentElement.appendChild(build(fs.contentDocument));
+        else if (fs && fs !== document.documentElement) fs.appendChild(build(document));
+    } catch {}
+    identifyTimer = setTimeout(gnHideIdentify, left);
+}
+
+// ── Jumpscare (just for fun; Admin Panel → Sessions) ────────────────────────
+// A face of our own (drawn here, no characters from anything) lunges at the
+// screen with a scream made on the spot by the browser. It flashes red once
+// and inverted once, well under the safe limit for people sensitive to
+// flashing lights (no more than 3 a second).
+// pic: a picture link the admin added (Admin Panel → Sessions → Jumpscare
+// pictures); one of the built-in faces if it's empty or doesn't load.
+const SCARE_FACE = `<svg viewBox="0 0 200 260" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+  <defs><radialGradient id="gnsk" cx="50%" cy="38%" r="70%"><stop offset="0" stop-color="#d9d3c2"/><stop offset=".55" stop-color="#8a8370"/><stop offset="1" stop-color="#141210"/></radialGradient>
+  <radialGradient id="gnse" cx="50%" cy="55%" r="55%"><stop offset="0" stop-color="#000"/><stop offset=".8" stop-color="#000"/><stop offset="1" stop-color="#2b0a06"/></radialGradient>
+  <radialGradient id="gnsp" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff2c0"/><stop offset=".35" stop-color="#ff3b1f"/><stop offset="1" stop-color="#ff3b1f" stop-opacity="0"/></radialGradient></defs>
+  <path d="M100 4C42 4 14 54 16 110c2 50 22 88 42 112 15 18 28 34 42 34s27-16 42-34c20-24 40-62 42-112 2-56-26-106-84-106Z" fill="url(#gnsk)"/>
+  <path d="M30 104c4-26 24-40 46-32 10 4 12 30 2 48-11 20-38 22-46 4-3-6-3-13-2-20ZM170 104c-4-26-24-40-46-32-10 4-12 30-2 48 11 20 38 22 46 4 3-6 3-13 2-20Z" fill="url(#gnse)"/>
+  <circle cx="58" cy="104" r="9" fill="url(#gnsp)"/><circle cx="142" cy="104" r="9" fill="url(#gnsp)"/>
+  <circle cx="58" cy="104" r="2.4" fill="#fff"/><circle cx="142" cy="104" r="2.4" fill="#fff"/>
+  <path d="M94 136l6-20 6 20-6 5Z" fill="#0b0a08"/>
+  <path d="M44 158c16 6 36 9 56 9s40-3 56-9c-2 52-26 90-56 90s-54-38-56-90Z" fill="#0a0000"/>
+  <path d="M46 160l6 20 6-18 6 22 6-20 6 24 6-22 6 24 6-24 6 22 6-24 6 22 6-20 6 18 6-20 6 18 4-16Z" fill="#e6dfc8"/>
+  <path d="M56 236l6-22 6 18 6-24 6 22 6-26 6 24 6-24 6 22 6-24 6 18 6-20 6 22 4-14c-8 14-24 24-38 24s-30-10-36-16Z" fill="#cfc7ae"/>
+  <path d="M78 30l8 18-6 14 10 12M136 40l-6 16 8 10-4 14M24 150l14 6 4 14" fill="none" stroke="#2a251c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
+</svg>`;
+// Two more of our own, so it isn't the same one every time
+const SCARE_FACES = [SCARE_FACE,
+`<svg viewBox="0 0 200 260" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+  <defs><radialGradient id="gnsk2" cx="50%" cy="35%" r="70%"><stop offset="0" stop-color="#b9c2b4"/><stop offset=".6" stop-color="#5d6658"/><stop offset="1" stop-color="#0d0f0c"/></radialGradient></defs>
+  <path d="M100 2C58 2 34 40 34 92c0 40 8 76 22 108 12 28 28 58 44 58s32-30 44-58c14-32 22-68 22-108C166 40 142 2 100 2Z" fill="url(#gnsk2)"/>
+  <ellipse cx="70" cy="104" rx="20" ry="30" fill="#000"/><ellipse cx="130" cy="104" rx="20" ry="30" fill="#000"/>
+  <path d="M60 140c-2 14 0 30 6 40M140 140c2 14 0 30-6 40" stroke="#000" stroke-width="4" fill="none" opacity=".6"/>
+  <ellipse cx="100" cy="206" rx="26" ry="44" fill="#000"/>
+  <path d="M84 176c6-4 26-4 32 0M80 236c10 6 30 6 40 0" stroke="#3a0000" stroke-width="3" fill="none"/>
+  <path d="M70 136l-4 26M130 136l4 26" stroke="#5a0000" stroke-width="3" stroke-linecap="round"/>
+</svg>`,
+`<svg viewBox="0 0 240 240" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+  <defs><radialGradient id="gnsk3" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#3a1a12"/><stop offset="1" stop-color="#000"/></radialGradient>
+  <radialGradient id="gnse3" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff7b0"/><stop offset=".4" stop-color="#ffb000"/><stop offset="1" stop-color="#ff3000" stop-opacity="0"/></radialGradient></defs>
+  <circle cx="120" cy="120" r="112" fill="url(#gnsk3)"/>
+  ${[[78, 86, 15], [162, 86, 15], [104, 64, 9], [136, 64, 9], [120, 98, 11], [56, 112, 8], [184, 112, 8]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r * 1.8}" fill="url(#gnse3)"/><circle cx="${x}" cy="${y}" r="${r * .35}" fill="#000"/>`).join("")}
+  <path d="M40 150c30 22 130 22 160 0-8 50-44 78-80 78s-72-28-80-78Z" fill="#050000"/>
+  <path d="M42 152l10 26 9-22 10 30 10-28 10 32 9-30 10 32 10-32 9 30 10-32 10 28 10-30 9 22 10-26" fill="#d8ccb0"/>
+</svg>`];
+// The sound, all made by the browser on the spot (no recordings):
+//  • the error "ding" when the fake error box shows up
+//  • the hit: a deep boom, a horror-movie "stinger" (a clashing chord of
+//    rough tones), and a scream — a voice-like tone shaped by the formants of
+//    an "AAAH" (800 / 1150 / 2900 Hz), jumping up in pitch with a wild
+//    vibrato, two of them slightly out of tune, plus a metallic shriek on top
+//  • all of it pushed through distortion and a limiter, so it's as loud as
+//    the speakers go without turning to mush. About 2 seconds.
+//  • a short shriek with the last inverted flash
+function scareSound(delayMs, dingMs = -1, subMs = -1) {
+    try {
+        const C = window.AudioContext || window.webkitAudioContext;
+        if (!C) return;
+        const ctx = new C();
+        if (ctx.state === "suspended") ctx.resume().catch(() => {});
+        const t0 = ctx.currentTime, hit = t0 + delayMs / 1000, len = 2.1;
+        const limiter = ctx.createDynamicsCompressor();
+        limiter.threshold.value = -10; limiter.knee.value = 4; limiter.ratio.value = 20; limiter.attack.value = 0.001; limiter.release.value = 0.15;
+        const master = ctx.createGain(); master.gain.value = 1.4;
+        master.connect(limiter); limiter.connect(ctx.destination);
+        const env = (g, at, peak, hold, end) => {
+            g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(peak, at + 0.012);
+            g.gain.setValueAtTime(peak, at + hold); g.gain.exponentialRampToValueAtTime(0.0001, at + end);
+        };
+        const noiseBuf = secs => { const b = ctx.createBuffer(1, Math.floor(ctx.sampleRate * secs), ctx.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; };
+        const shaper = amt => { const s = ctx.createWaveShaper(), c = new Float32Array(4096); for (let i = 0; i < c.length; i++) { const x = i / 2048 - 1; c[i] = Math.tanh(x * amt); } s.curve = c; s.oversample = "4x"; return s; };
+        // Error ding
+        if (dingMs >= 0) {
+            const td = t0 + dingMs / 1000;
+            [[880, 0], [660, 0.12]].forEach(([f, off]) => {
+                const o = ctx.createOscillator(), g = ctx.createGain();
+                o.type = "sine"; o.frequency.value = f; env(g, td + off, 0.16, 0.02, 0.35);
+                o.connect(g); g.connect(ctx.destination); o.start(td + off); o.stop(td + off + 0.4);
+            });
+        }
+        // Last flash: a short, harsh shriek
+        if (subMs >= 0) {
+            const ts = t0 + subMs / 1000, d = shaper(6), g = ctx.createGain();
+            env(g, ts, 0.7, 0.08, 0.3); d.connect(g); g.connect(master);
+            [1870, 1990, 2650].forEach(f => { const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(f, ts); o.frequency.exponentialRampToValueAtTime(f * 0.7, ts + 0.3); o.connect(d); o.start(ts); o.stop(ts + 0.32); });
+        }
+        // Boom
+        {
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = "sine"; o.frequency.setValueAtTime(95, hit); o.frequency.exponentialRampToValueAtTime(28, hit + 0.9);
+            env(g, hit, 1.2, 0.05, 1.1); o.connect(g); g.connect(master); o.start(hit); o.stop(hit + 1.2);
+            const n = ctx.createBufferSource(), lp = ctx.createBiquadFilter(), ng = ctx.createGain();
+            n.buffer = noiseBuf(0.5); lp.type = "lowpass"; lp.frequency.value = 400; env(ng, hit, 0.9, 0.02, 0.45);
+            n.connect(lp); lp.connect(ng); ng.connect(master); n.start(hit);
+        }
+        // Stinger: a clashing chord (half-steps rubbing) with fast tremolo
+        {
+            const dist = shaper(3), bus = ctx.createGain(), bp = ctx.createBiquadFilter();
+            bp.type = "bandpass"; bp.frequency.value = 1400; bp.Q.value = 0.5;
+            env(bus, hit, 0.35, 0.5, 1.9); dist.connect(bp); bp.connect(bus); bus.connect(master);
+            const trem = ctx.createOscillator(), tg = ctx.createGain(); trem.frequency.value = 13; tg.gain.value = 0.4; trem.connect(tg); tg.connect(bus.gain); trem.start(hit); trem.stop(hit + len);
+            [277.2, 293.7, 392, 415.3, 554.4, 587.3].forEach((f, i) => {
+                const o = ctx.createOscillator(), g = ctx.createGain();
+                o.type = i % 2 ? "square" : "sawtooth"; o.frequency.setValueAtTime(f, hit); o.frequency.linearRampToValueAtTime(f * 0.94, hit + len);
+                g.gain.value = 0.16; o.connect(g); g.connect(dist); o.start(hit); o.stop(hit + len);
+            });
+        }
+        // Scream: rough voice through "AAAH" formants, pitch jumping up with wild vibrato
+        {
+            const formants = [[800, 6, 1], [1150, 7, 0.7], [2900, 9, 0.45], [3400, 10, 0.3]];
+            const voiceBus = ctx.createGain(), dist = shaper(5);
+            env(voiceBus, hit + 0.02, 1, len * 0.55, len);
+            voiceBus.connect(dist); dist.connect(master);
+            const k = 0.85 + Math.random() * 0.35;   // a different voice each time
+            [0, 7].forEach(cents => {
+                const src = ctx.createOscillator(); src.type = "sawtooth";
+                const f = (x) => x * k * Math.pow(2, cents / 1200);
+                src.frequency.setValueAtTime(f(320), hit); src.frequency.exponentialRampToValueAtTime(f(980), hit + 0.12);
+                src.frequency.exponentialRampToValueAtTime(f(820), hit + 0.9); src.frequency.exponentialRampToValueAtTime(f(520), hit + len);
+                const vib = ctx.createOscillator(), vg = ctx.createGain(); vib.frequency.value = 7.5 + Math.random() * 2; vg.gain.value = f(60); vib.connect(vg); vg.connect(src.frequency);
+                const jit = ctx.createBufferSource(), jg = ctx.createGain(), jl = ctx.createBiquadFilter();   // a ragged, unsteady throat
+                jit.buffer = noiseBuf(len); jl.type = "lowpass"; jl.frequency.value = 40; jg.gain.value = f(120); jit.connect(jl); jl.connect(jg); jg.connect(src.frequency);
+                formants.forEach(([ff, q, amp]) => {
+                    const bp = ctx.createBiquadFilter(), g = ctx.createGain();
+                    bp.type = "bandpass"; bp.frequency.value = ff * (0.95 + Math.random() * 0.1); bp.Q.value = q; g.gain.value = amp * 2.2;
+                    src.connect(bp); bp.connect(g); g.connect(voiceBus);
+                });
+                // breath in the scream
+                const br = ctx.createBufferSource(), bb = ctx.createBiquadFilter(), bg = ctx.createGain();
+                br.buffer = noiseBuf(len); bb.type = "bandpass"; bb.frequency.value = 1800; bb.Q.value = 0.8; bg.gain.value = 0.35;
+                br.connect(bb); bb.connect(bg); bg.connect(voiceBus);
+                [src, vib, jit, br].forEach(n => { n.start(hit); n.stop(hit + len); });
+            });
+            // Metallic shriek on top
+            const sh = ctx.createOscillator(), mod = ctx.createOscillator(), mg = ctx.createGain(), sg = ctx.createGain();
+            sh.type = "sine"; sh.frequency.setValueAtTime(3100 * k, hit); sh.frequency.exponentialRampToValueAtTime(2300 * k, hit + len);
+            mod.frequency.value = 437; mg.gain.value = 1800; mod.connect(mg); mg.connect(sh.frequency);
+            env(sg, hit, 0.18, 0.4, 1.4); sh.connect(sg); sg.connect(master);
+            [sh, mod].forEach(n => { n.start(hit); n.stop(hit + len); });
+        }
+        setTimeout(() => ctx.close().catch(() => {}), Math.max(delayMs + (len + 0.5) * 1000, subMs + 800));
+    } catch (e) { console.warn("Jumpscare sound failed", e); }
+}
+// Pictures to use (Admin Panel → Sessions picks one at random, or yours):
+// public-domain paintings on Wikimedia Commons, linked rather than copied.
+// pos: which part of the picture to fill the screen with.
+const SCARE_BANK = [
+    ["Goya, Saturn Devouring His Son (1819–23)", "Francisco_de_Goya,_Saturno_devorando_a_su_hijo_(1819-1823).jpg", "50% 18%"],
+    ["Goya, Two Old Men Eating Soup (1819–23)", "Viejos_comiendo_sopa.jpg", "35% 40%"],
+    ["Fuseli, The Nightmare (1781)", "John_Henry_Fuseli_-_The_Nightmare.JPG", "38% 30%"],
+    ["Böcklin, Self-Portrait with Death Playing the Fiddle (1872)", "Arnold_Boecklin-fiedelnder_Tod.jpg", "78% 22%"]
+].map(([title, file, pos]) => ({ title, pos, url: "https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(file) + "?width=1400" }));
+function scarePos(url) { const b = SCARE_BANK.find(x => x.url === url); return b ? b.pos : "50% 35%"; }
+
+// How it goes: their game freezes (it's paused, so it really stops), then a
+// red error bar blinks at the top and a "not responding" box pops up with a
+// ding, so they lean in to read it… and somewhere in the middle of reading,
+// with no warning at all (no black screen, no sound first, a different moment
+// every time), a face is suddenly right there, filling the screen (no zoom, it just appears),
+// too close, and stays there frozen (it only twitches, like a broken film),
+// with one red flash and the scream.
+// Cut to black, and when they think it's over, it flashes once more,
+// inverted. After that the game carries on.
+const SCARE_FREEZE_MS = 800, SCARE_BOX_MS = 1500;
+// The hit comes at a random moment while they're reading the box (no warning)
+function gnJumpscare(pic) {
+    const SCARE_HIT_MS = SCARE_BOX_MS + 1400 + Math.floor(Math.random() * 2600),
+        SCARE_CUT_MS = SCARE_HIT_MS + 1700, SCARE_SUB_MS = SCARE_CUT_MS + 550, SCARE_END_MS = SCARE_SUB_MS + 350;
+    const face = SCARE_FACES[Math.floor(Math.random() * SCARE_FACES.length)];
+    const okPic = typeof pic === "string" && /^https:\/\/[^\s"'<>]+$/.test(pic) ? pic : "";
+    const uid = "gs" + Math.random().toString(36).slice(2, 8);
+    let gameName = "";
+    try { if (getComputedStyle(zoneViewer).display !== "none") gameName = (document.getElementById("zoneName").textContent || "").trim(); } catch {}
+    const appName = gameName || "This page";
+    const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    // Start loading the picture now, during the fake crash
+    let picReady = false;
+    if (okPic) { const pre = new Image(); pre.referrerPolicy = "no-referrer"; pre.onload = () => { picReady = true; }; pre.src = okPic; }
+    // Freeze the game for real
+    let gw = null;
+    try { if (typeof zoneFrame !== "undefined" && zoneFrame && !zoneFrame.__retiring) gw = zoneFrame.contentWindow; } catch {}
+    try { if (gw && gw.__gnPause) gw.__gnPause(true); } catch {}
+    try { if (gw && gw.__gnSetMuted) gw.__gnSetMuted(true); } catch {}
+    const build = doc => {
+        const el = doc.createElement("div");
+        el.className = "gn-scare";
+        el.setAttribute("aria-hidden", "true");
+        el.style.cssText = "position:fixed;inset:0;z-index:2147483647;overflow:hidden;pointer-events:auto;font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;";
+        let copies = 0;
+        const own = svg => { const suf = "_" + uid + (copies++); return svg.replace(/id="(gns[a-z0-9]*)"/g, `id="$1${suf}"`).replace(/url\(#(gns[a-z0-9]*)\)/g, `url(#$1${suf})`); };
+        const artOf = () => okPic ? `<img alt="" referrerpolicy="no-referrer" src="${esc(okPic)}" style="width:100%;height:100%;object-fit:cover;object-position:${scarePos(okPic)};">` : own(face);
+        const code = "0x" + (0x887A0000 + Math.floor(Math.random() * 16)).toString(16).toUpperCase();
+        el.innerHTML = `<style>
+#${uid}{position:absolute;inset:0;}
+#${uid} .bar{position:absolute;left:0;right:0;top:0;display:none;align-items:center;gap:12px;padding:12px 18px;background:#b00020;color:#fff;font-size:15px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+#${uid}.err .bar{display:flex;animation:${uid}blink .5s steps(1) infinite;}
+@keyframes ${uid}blink{0%{background:#b00020}50%{background:#5c0011}}
+#${uid} .dim{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .4s;}
+#${uid}.box .dim{background:rgba(0,0,0,.35);}
+#${uid} .dlg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);width:min(440px,90vw);display:none;background:#f3f3f3;color:#1b1b1b;border:1px solid #9a9a9a;box-shadow:0 18px 60px rgba(0,0,0,.5);border-radius:8px;overflow:hidden;cursor:default;}
+#${uid}.box .dlg{display:block;animation:${uid}pop .14s ease-out forwards;}
+@keyframes ${uid}pop{to{transform:translate(-50%,-50%) scale(1)}}
+#${uid} .dlg .tt{padding:9px 14px;font-size:12px;background:#fff;border-bottom:1px solid #ddd;color:#444;}
+#${uid} .dlg .bd{display:flex;gap:14px;padding:18px 18px 8px;font-size:14px;line-height:1.45;}
+#${uid} .dlg .ic{flex:none;width:34px;height:34px;border-radius:50%;background:#c42b1c;color:#fff;display:grid;place-items:center;font-weight:800;font-size:20px;}
+#${uid} .dlg .bt{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px 16px;}
+#${uid} .dlg button{font:inherit;font-size:13px;padding:6px 18px;border-radius:4px;border:1px solid #8a8a8a;background:#fdfdfd;color:#111;cursor:default;}
+#${uid} .dlg button.p{background:#0067c0;border-color:#0067c0;color:#fff;}
+#${uid} .spin{display:inline-block;width:12px;height:12px;border:2px solid #999;border-top-color:transparent;border-radius:50%;animation:${uid}sp 1s linear infinite;vertical-align:-2px;margin-right:6px;}
+@keyframes ${uid}sp{to{transform:rotate(360deg)}}
+#${uid} .black{position:absolute;inset:0;background:#000;display:none;}
+#${uid}.go .black, #${uid}.cut .black, #${uid}.sub .black{display:block;}
+#${uid}.go .bar, #${uid}.go .dlg, #${uid}.cut .bar, #${uid}.cut .dlg, #${uid}.sub .bar, #${uid}.sub .dlg{display:none;}
+#${uid} .hit{position:absolute;inset:0;display:none;place-items:center;overflow:hidden;cursor:none;}
+#${uid}.go .hit, #${uid}.sub .hit{display:grid;}
+#${uid} .mv{position:absolute;inset:0;display:grid;place-items:center;transform:scale(.14);}
+#${uid}.go .mv{opacity:1;filter:contrast(1.35) brightness(1.08) saturate(.85);transform:scale(1.32);animation:${uid}lunge .1s steps(1) forwards, ${uid}twitch 1.1s steps(1) .3s infinite;}
+@keyframes ${uid}lunge{0%{transform:scale(1.5)}50%{transform:scale(1.32)}}
+@keyframes ${uid}twitch{0%{transform:scale(1.32)}27%{transform:scale(1.36) translate(6px,-4px) rotate(.6deg)}29%{transform:scale(1.32)}58%{transform:scale(1.33) translate(-5px,3px) rotate(-.5deg)}60%{transform:scale(1.32)}86%{transform:scale(1.4) translate(0,6px)}88%{transform:scale(1.32)}}
+#${uid}.sub .mv{opacity:1;animation:none;transform:scale(1.45);filter:invert(1) contrast(1.8) brightness(1.1);}
+#${uid} .layer{position:absolute;inset:0;display:grid;place-items:center;}
+#${uid} .layer > *{width:100%;height:100%;}
+#${uid} .layer > svg{width:auto;height:112vh;max-width:none;}
+#${uid} .r, #${uid} .c{mix-blend-mode:screen;opacity:0;}
+#${uid} .r{filter:sepia(1) saturate(8) hue-rotate(-40deg);--dx:-26px;}
+#${uid} .c{filter:sepia(1) saturate(6) hue-rotate(140deg);--dx:26px;}
+#${uid}.go .r, #${uid}.go .c{animation:${uid}spl .35s steps(1) forwards;}
+@keyframes ${uid}spl{0%,30%{opacity:.75;translate:var(--dx) 0}31%,100%{opacity:.12;translate:calc(var(--dx) / 6) 0}}
+#${uid} .grain{position:absolute;inset:-50%;opacity:.28;mix-blend-mode:overlay;display:none;animation:${uid}grain .12s steps(3) infinite;}
+#${uid}.go .grain{display:block;}
+@keyframes ${uid}grain{0%{transform:translate(0,0)}33%{transform:translate(-5%,3%)}66%{transform:translate(4%,-4%)}100%{transform:translate(-2%,5%)}}
+#${uid} .vig{position:absolute;inset:0;display:none;background:radial-gradient(ellipse at center, transparent 50%, rgba(60,0,0,.6) 85%, #000 100%);}
+#${uid}.go .vig{display:block;}
+#${uid} .red{position:absolute;inset:0;background:#e00000;opacity:0;mix-blend-mode:multiply;}
+#${uid}.go .red{animation:${uid}red 1s linear forwards;}
+@keyframes ${uid}red{0%,9%{opacity:.85}24%,100%{opacity:0}}
+#${uid}.cut .grain, #${uid}.cut .vig, #${uid}.cut .red{display:none;}
+</style>
+<svg width="0" height="0" style="position:absolute"><defs>
+ <filter id="${uid}f" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="${Math.floor(Math.random() * 99)}" result="w"><animate attributeName="baseFrequency" values="0.012;0.02;0.009;0.016" dur="0.5s" repeatCount="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="w" scale="14" xChannelSelector="R" yChannelSelector="G"/></filter>
+ <filter id="${uid}n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.4 -0.2"/></filter>
+</defs></svg>
+<div id="${uid}">
+  <div class="dim"></div>
+  <div class="bar"><span style="font-size:20px;line-height:1">&#9888;</span><span>Error: ${esc(appName)} stopped responding (WebGL context lost, ${code}). Unsaved progress may be lost.</span></div>
+  <div class="dlg"><div class="tt">${esc(appName)}</div>
+    <div class="bd"><div class="ic">!</div><div><b>${esc(appName)} isn't responding</b><br>You can wait for it to respond or reload it. Reloading may lose unsaved progress.<br><span style="color:#555;font-size:12.5px"><span class="spin"></span>Waiting for the game…</span></div></div>
+    <div class="bt"><button type="button">Wait</button><button type="button" class="p">Reload</button></div></div>
+  <div class="black"></div>
+  <div class="hit"><div class="mv"><div class="layer m">${artOf()}</div><div class="layer r">${artOf()}</div><div class="layer c">${artOf()}</div></div></div>
+  <svg class="grain" width="200%" height="200%"><rect width="100%" height="100%" filter="url(#${uid}n)"/></svg>
+  <div class="vig"></div><div class="red"></div>
+</div>`;
+        doc.documentElement.appendChild(el);
+        el.querySelectorAll(".hit img").forEach(img => { img.onerror = () => { const l = img.parentNode; if (l) l.innerHTML = own(face); }; });
+        const st = el.querySelector("#" + uid);
+        setTimeout(() => st.classList.add("err"), SCARE_FREEZE_MS);
+        setTimeout(() => st.classList.add("box"), SCARE_BOX_MS);
+        setTimeout(() => {
+            // The picture didn't load in time: a built-in face instead
+            if (okPic && !picReady) el.querySelectorAll(".hit .layer").forEach(l => { l.innerHTML = own(face); });
+            st.classList.add("go");
+        }, SCARE_HIT_MS);
+        setTimeout(() => { st.classList.remove("go"); st.classList.add("cut"); }, SCARE_CUT_MS);
+        setTimeout(() => { st.classList.remove("cut"); st.classList.add("sub"); }, SCARE_SUB_MS);
+        setTimeout(() => { st.classList.remove("sub"); st.classList.add("cut"); }, SCARE_SUB_MS + 90);
+        setTimeout(() => { el.style.transition = "opacity .3s"; el.style.opacity = "0"; setTimeout(() => el.remove(), 350); }, SCARE_END_MS);
+        return el;
+    };
+    try {
+        const fs = document.fullscreenElement || document.webkitFullscreenElement;
+        if (fs && fs.tagName === "IFRAME" && fs.contentDocument) build(fs.contentDocument);
+        else if (fs && fs !== document.documentElement) fs.appendChild(build(document));
+        else build(document);
+    } catch { build(document); }
+    scareSound(SCARE_HIT_MS, SCARE_BOX_MS, SCARE_SUB_MS);
+    // The game carries on afterwards
+    setTimeout(() => {
+        try { if (gw && gw.__gnPause) gw.__gnPause(false); } catch {}
+        try { if (gw && gw.__gnSetMuted) gw.__gnSetMuted(!!(window.__gnmathMuted && window.__gnmathMuted())); } catch {}
+    }, SCARE_END_MS + 300);
+}
+
+</script>
 <script>/* js/realtime.js */
 // ═════════════════════════════════════════════════════════════════════════════
 // Instant changes over Firebase's live connection (the database code is
@@ -17916,6 +18542,20 @@ function getLiveSiteModeAt() {
                 if (until > Date.now()) window.gnBoot.apply({ until, reason: String(d.reason || "").slice(0, 200) });
                 else window.gnBoot.lift();
             }, () => { window.gnBoot.listenFailed && window.gnBoot.listenFailed(); });
+        }
+        // ── Find screen (identify.js) ────────────────────────────────────────
+        if (/^[A-Za-z0-9]{20}$/.test(sid) && typeof gnShowIdentify === "function") {
+            let shownAt = 0;
+            cloudDb.collection("identify").doc(sid).onSnapshot(snap => {
+                count(1);
+                const d = snap.exists ? snap.data() || {} : null;
+                const at = d ? ms(d.at) : 0, until = d ? ms(d.until) : 0;
+                if (!d || until <= Date.now()) { gnHideIdentify(); return; }
+                if (at && at <= shownAt) return;
+                shownAt = at || Date.now();
+                if (d.k === "scare") { if (typeof gnJumpscare === "function") gnJumpscare(typeof d.u === "string" ? d.u : ""); return; }
+                gnShowIdentify({ c: String(d.c || ""), n: Number(d.n), until });
+            }, () => {});
         }
 
         // ── Site mode ────────────────────────────────────────────────────────
@@ -18931,6 +19571,8 @@ function updateSiteStatus() {
         li.querySelector("b").textContent = `${online.toLocaleString()} ${online === 1 ? "person" : "people"} online now`;
         li.querySelector("div span").textContent = "On GN 2.0 in the last 5 minutes" + (mins >= 1 ? ` · counted ${mins} min ago` : "");
         list.appendChild(li);
+        const g = onlineGraph(window.gnOnlineHistory || []);
+        if (g) list.appendChild(g);
     }
     if (s.override.level !== "auto" || s.override.text.trim()) {
         const li = document.createElement("li");
@@ -18958,6 +19600,60 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) upda
 setInterval(() => { if (!document.hidden) updateSiteStatus(); }, 4000);
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", updateSiteStatus);
 else updateSiteStatus();
+
+
+// ── People online over the last 24 hours (in the status panel) ─────────────
+// From live/now's history (live.js): the most people counted in each
+// 15-minute slot. A slot with no count means nobody had the site open.
+const ONLINE_SLOT_MS = 15 * 60000, ONLINE_SLOTS = 96;
+function onlineGraph(hist) {
+    if (!hist.length) return null;
+    const now = Date.now(), start = now - ONLINE_SLOTS * ONLINE_SLOT_MS;
+    const slots = new Array(ONLINE_SLOTS).fill(0);
+    for (const [t, n] of hist) {
+        const i = Math.floor((t - start) / ONLINE_SLOT_MS);
+        if (i >= 0 && i < ONLINE_SLOTS) slots[i] = Math.max(slots[i], n);
+    }
+    const peak = Math.max(...slots), peakAt = slots.indexOf(peak);
+    const W = 300, H = 76, top = 6, bottom = 18, plotH = H - top - bottom;
+    const max = Math.max(4, Math.ceil(peak * 1.15));
+    const x = i => (i + 0.5) / ONLINE_SLOTS * W, y = n => top + plotH - n / max * plotH;
+    const pts = slots.map((n, i) => `${x(i).toFixed(1)},${y(n).toFixed(1)}`);
+    const line = "M" + pts.join("L"), area = `${line}L${x(ONLINE_SLOTS - 1).toFixed(1)},${top + plotH}L${x(0).toFixed(1)},${top + plotH}Z`;
+    const time = t => new Date(t).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    const li = document.createElement("li");
+    li.className = "status-graph";
+    li.innerHTML = `<div class="sg-head"><b>Last 24 hours</b><span>Peak ${peak.toLocaleString()} at ${time(start + peakAt * ONLINE_SLOT_MS)}</span></div>
+        <div class="sg-plot">
+          <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="People online over the last 24 hours, peak ${peak} at ${time(start + peakAt * ONLINE_SLOT_MS)}">
+            <line x1="0" x2="${W}" y1="${top + plotH}" y2="${top + plotH}" class="sg-base"/>
+            <line x1="0" x2="${W}" y1="${y(peak).toFixed(1)}" y2="${y(peak).toFixed(1)}" class="sg-grid"/>
+            <path d="${area}" class="sg-area"/><path d="${line}" class="sg-line" vector-effect="non-scaling-stroke"/>
+            <line class="sg-cross" y1="${top}" y2="${top + plotH}" x1="-10" x2="-10" vector-effect="non-scaling-stroke"/>
+          </svg>
+          <span class="sg-dot" hidden></span><span class="sg-tip" hidden></span>
+          <div class="sg-axis"><span>24 h ago</span><span>12 h ago</span><span>Now</span></div>
+        </div>`;
+    // Hover / touch: which slot, how many
+    const plot = li.querySelector(".sg-plot"), cross = li.querySelector(".sg-cross"), tip = li.querySelector(".sg-tip"), dot = li.querySelector(".sg-dot");
+    const show = ev => {
+        const r = plot.getBoundingClientRect(), px = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
+        const i = Math.min(ONLINE_SLOTS - 1, Math.max(0, Math.floor(px / r.width * ONLINE_SLOTS)));
+        const n = slots[i], t0 = start + i * ONLINE_SLOT_MS;
+        cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i));
+        const svgH = r.height - 16;   // the axis labels sit under the plot
+        dot.hidden = tip.hidden = false;
+        dot.style.left = (x(i) / W * r.width) + "px"; dot.style.top = (y(n) / H * svgH) + "px";
+        tip.textContent = `${time(t0)}–${time(t0 + ONLINE_SLOT_MS)} · ${n ? n.toLocaleString() + " online" : "nobody online"}`;
+        const tw = tip.offsetWidth;
+        tip.style.left = Math.min(Math.max(0, x(i) / W * r.width - tw / 2), r.width - tw) + "px";
+    };
+    const hide = () => { dot.hidden = tip.hidden = true; cross.setAttribute("x1", -10); cross.setAttribute("x2", -10); };
+    plot.addEventListener("pointermove", show);
+    plot.addEventListener("pointerdown", show);
+    plot.addEventListener("pointerleave", hide);
+    return li;
+}
 
 </script>
 <script>/* js/skins.js */
