@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ c3bed9a070. -->
+<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ f97be9d7cd. -->
 <html lang="en">
     <head>
 <script>
@@ -3592,7 +3592,11 @@ body:has(#zoneViewer[style*="flex"]) > :is(header, main, footer, #owner-announce
 .zone-controls button.save-chip.warn { background: rgba(255, 196, 0, 0.18); border-color: rgba(255, 196, 0, 0.55); opacity: 1; }
 .zone-controls button.save-chip.busy .gi { animation: saveChipPulse 1.2s ease-in-out infinite; }
 @keyframes saveChipPulse { 50% { opacity: 0.35; } }
-@media (prefers-reduced-motion: reduce) { .zone-controls button.save-chip.busy .gi { animation: none; } }
+/* Live Save: the rocket lifts off a little each time a save goes through */
+.zone-controls button.save-chip.live .gi { width: 22px; height: 22px; margin: -4px 0; vertical-align: middle; }
+.zone-controls button.save-chip.live.fresh .gi { animation: liveSaveLift 0.9s ease-out; }
+@keyframes liveSaveLift { 0% { transform: translate(0, 0); } 40% { transform: translate(2px, -3px); } 100% { transform: translate(0, 0); } }
+@media (prefers-reduced-motion: reduce) { .zone-controls button.save-chip.busy .gi, .zone-controls button.save-chip.live.fresh .gi { animation: none; } }
 @media (max-width: 760px) { .zone-controls button.save-chip span { display: none; } }
 
 /* Save details (the panel under "Saved 3 min ago") */
@@ -3990,6 +3994,8 @@ const GN_ICONS = {
     compass: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/>',
     map: '<path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20V6.5Z"/><path d="M9 4v13.5M15 6.5V20"/>',
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.7 5.6 3.7 9s-1.2 6.4-3.7 9c-2.5-2.6-3.7-5.6-3.7-9S9.5 5.6 12 3Z"/>',
+    // Live Save (live-save.js): a rocket lifting off, with speed trails
+    liveSave: '<path d="M20.5 3.5c-4.6.2-8.3 2.4-10.9 6L8.6 14l1.4 1.4 4.5-1c3.6-2.6 5.8-6.3 6-10.9Z"/><circle cx="15.2" cy="8.8" r="1.2"/><path d="M9.6 9.5 6.3 9.9 4.5 12.4l4.4.9M14.5 14.4l-.4 3.3-2.5 1.8-.9-4.4"/><path d="M3.5 20.5 6 18M3.5 16.5 5 15M7.5 20.5 9 19"/>',
     rocket: '<path d="M12 3c3 2.2 4.5 5.5 4.5 9.3 0 1-.1 1.9-.3 2.7H7.8c-.2-.8-.3-1.7-.3-2.7C7.5 8.5 9 5.2 12 3Z"/><circle cx="12" cy="10" r="1.6"/><path d="M7.8 15 5 18l3 .5M16.2 15l2.8 3-3 .5M10.5 18.5 12 21l1.5-2.5"/>',
     timer: '<circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V10M10 2.5h4M18.5 6.5 20 5"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
@@ -5685,6 +5691,8 @@ const htmlURLFallbacks = [
 // jsDelivr (fast CDN) → GitHub directly → githack (another CDN). A source that
 // fails, times out, or gets redirected (e.g. to a school filter's block page)
 // is skipped for the rest of the session.
+// The spare PC at home, reached through a Cloudflare tunnel (js/home-server.js)
+const HOME_SERVER = "https://data.learnresearch.org";
 const MIRRORS = {
     jsdelivr: (o, r, ref, p) => `https://cdn.jsdelivr.net/gh/${o}/${r}@${ref === "HEAD" ? "latest" : ref}/${p}`,
     github:   (o, r, ref, p) => `https://raw.githubusercontent.com/${o}/${r}/${ref === "latest" ? "HEAD" : ref}/${p}`,
@@ -5693,12 +5701,14 @@ const MIRRORS = {
     // Cloudflare). A school filter that blocks cdn.jsdelivr.net often misses these.
     fastly:   (o, r, ref, p) => `https://fastly.jsdelivr.net/gh/${o}/${r}@${ref === "HEAD" ? "latest" : ref}/${p}`,
     gcore:    (o, r, ref, p) => `https://gcore.jsdelivr.net/gh/${o}/${r}@${ref === "HEAD" ? "latest" : ref}/${p}`,
-    testingcf:(o, r, ref, p) => `https://testingcf.jsdelivr.net/gh/${o}/${r}@${ref === "HEAD" ? "latest" : ref}/${p}`
+    testingcf:(o, r, ref, p) => `https://testingcf.jsdelivr.net/gh/${o}/${r}@${ref === "HEAD" ? "latest" : ref}/${p}`,
+    // Lincoln's home server (js/home-server.js), last resort: home upload is only ~20 Mbps
+    home:     (o, r, ref, p) => `${HOME_SERVER}/gh/${o}/${r}@${ref === "HEAD" ? "latest" : ref}/${p}`
 };
 const PRIMARY_MIRRORS = ["jsdelivr", "github", "githack"];
-const BACKUP_MIRRORS = ["fastly", "gcore", "testingcf"];
+const BACKUP_MIRRORS = ["fastly", "gcore", "testingcf", "home"];
 const MIRROR_HOSTS = { "cdn.jsdelivr.net": "jsdelivr", "raw.githubusercontent.com": "github", "rawcdn.githack.com": "githack",
-    "fastly.jsdelivr.net": "fastly", "gcore.jsdelivr.net": "gcore", "testingcf.jsdelivr.net": "testingcf" };
+    "fastly.jsdelivr.net": "fastly", "gcore.jsdelivr.net": "gcore", "testingcf.jsdelivr.net": "testingcf", "data.learnresearch.org": "home" };
 // Sources that failed recently, remembered across visits for a few hours so a
 // school filter that blocks one isn't waited on again every time the site opens.
 const MIRROR_DOWN_KEY = "gnmath-mirror-down-at", MIRROR_DOWN_MS = 6 * 3600000;
@@ -5744,9 +5754,20 @@ function suspectMirror(name) {
     if (!name || Date.now() - (mirrorProbeAt[name] || 0) < 60000) return;
     probeMirror(name);
 }
+// Once Cloudflare caches the GN 2.0 Server's game files (home-server.js checks),
+// it's fast for everyone and can't overload the PC, so it moves up to second
+// place, right after jsDelivr: its address is new, so school filters that
+// block jsDelivr often don't block it yet.
+function promoteHomeMirror() {
+    if (GH_MIRROR_ORDER[1] === "home") return;
+    GH_MIRROR_ORDER.splice(GH_MIRROR_ORDER.indexOf("home"), 1);
+    GH_MIRROR_ORDER.splice(1, 0, "home");
+}
 function mirrorUrls(owner, repo, ref, path) {
-    // The three main sources first, then the jsDelivr backups; working ones first
+    // The three main sources first, then the jsDelivr backups; working ones first.
+    // The GN 2.0 Server goes second once Cloudflare caches it (promoteHomeMirror).
     const order = [...PRIMARY_MIRRORS, ...BACKUP_MIRRORS];
+    if (window.gnHomeCached) { order.splice(order.indexOf("home"), 1); order.splice(1, 0, "home"); }
     order.sort((a, b) => mirrorDown.has(a) - mirrorDown.has(b));
     return order.map(k => MIRRORS[k](owner, repo, ref, path));
 }
@@ -5873,7 +5894,7 @@ function useLocalLibs(html) {
 // jsdelivr.net address, and switching to a blocked backup broke every game.
 // The same switch is made inside the game while it runs (gameMirrorHook), for
 // files the game asks for itself (Unity data, Godot packs, split parts).
-const GH_MIRROR_ORDER = ["jsdelivr", "fastly", "gcore", "testingcf", "githack", "github"];
+const GH_MIRROR_ORDER = ["jsdelivr", "fastly", "gcore", "testingcf", "githack", "home", "github"];
 const GAME_MIRROR_URL_RE = /https?:\/\/(?:(?:cdn|fastly|gcore|testingcf)\.jsdelivr\.net|raw\.githubusercontent\.com|raw(?:cdn)?\.githack\.com)\/[^\s"'`<>()\\]*/g;
 // Moves one link to source T if its own source is in DOWN. Self-contained:
 // it's also copied into each game page for gameMirrorHook.
@@ -5891,11 +5912,13 @@ function gnMirrorUrl(u, T, DOWN) {
     if ((m = /^https?:\/\/(cdn|fastly|gcore|testingcf)\.jsdelivr\.net\/gh\/([\w.-]+)\/([\w.-]+?)(?:@([^\/]+))?(?:\/(.*))?$/.exec(u))) { name = jname(m[1]); o = m[2]; r = m[3]; ref = m[4] || "latest"; path = m[5] || ""; }
     else if ((m = /^https?:\/\/raw\.githubusercontent\.com\/([\w.-]+)\/([\w.-]+)\/(?:refs\/heads\/)?([^\/]+)\/(.*)$/.exec(u))) { name = "github"; o = m[1]; r = m[2]; ref = m[3]; path = m[4]; }
     else if ((m = /^https?:\/\/raw(?:cdn)?\.githack\.com\/([\w.-]+)\/([\w.-]+)\/([^\/]+)\/(.*)$/.exec(u))) { name = "githack"; o = m[1]; r = m[2]; ref = m[3]; path = m[4]; }
+    else if ((m = /^https?:\/\/data\.learnresearch\.org\/gh\/([\w.-]+)\/([\w.-]+?)@([^\/]+)\/(.*)$/.exec(u))) { name = "home"; o = m[1]; r = m[2]; ref = m[3]; path = m[4]; }
     else return u;
     if (name === T || DOWN.indexOf(name) < 0) return u;
     var branch = ref === "latest" ? "HEAD" : ref;
     if (T === "github") return "https://raw.githubusercontent.com/" + o + "/" + r + "/" + branch + "/" + path;
     if (T === "githack") return "https://rawcdn.githack.com/" + o + "/" + r + "/" + branch + "/" + path;
+    if (T === "home") return "https://data.learnresearch.org/gh/" + o + "/" + r + "@" + (ref === "HEAD" ? "latest" : ref) + "/" + path;
     return "https://" + (T === "jsdelivr" ? "cdn" : T) + ".jsdelivr.net/gh/" + o + "/" + r + "@" + (ref === "HEAD" ? "latest" : ref) + "/" + path;
 }
 const mirrorProbing = {};
@@ -5985,13 +6008,13 @@ async function adaptGameToMirrors(html) {
 // and if a source still fails, tries the others and tells the site.
 function gameMirrorHook(MAP, T, DOWN) {
     try {
-        var ORDER = ["jsdelivr", "fastly", "gcore", "testingcf", "githack", "github"];
+        var ORDER = ["jsdelivr", "fastly", "gcore", "testingcf", "githack", "home", "github"];
         var GH = /^https:\/\/raw\.githubusercontent\.com\//;
         var nameOf = function (u) {
             var m = /^https?:\/\/([^\/]+)\//.exec(u || ""); if (!m) return "";
             var h = m[1];
             if (/^(cdn|fastly|gcore|testingcf)\.jsdelivr\.net$/.test(h)) return h.split(".")[0] === "cdn" ? "jsdelivr" : h.split(".")[0];
-            return h === "raw.githubusercontent.com" ? "github" : /githack\.com$/.test(h) ? "githack" : "";
+            return h === "raw.githubusercontent.com" ? "github" : /githack\.com$/.test(h) ? "githack" : h === "data.learnresearch.org" ? "home" : "";
         };
         var map = function (u) { try { return MAP(String(u), T, DOWN); } catch (e) { return u; } };
         var abs = function (u) { try { return new URL(String(u), document.baseURI).href; } catch (e) { return String(u); } };
@@ -6150,6 +6173,7 @@ function showSourceNotice(text) {
 
 let zones = [];
 let popularityData = {};
+const popularitySource = {};   // period -> "gn2" (GN 2.0 Server) or "jsdelivr"
 const featuredContainer = document.getElementById('featuredZones');
 function toTitleCase(str) {
   return str.replace(
@@ -6321,7 +6345,26 @@ function loadCachedPopularity() {
     } catch {}
     return false;
 }
+// Play counts: GN 2.0's own, counted by the GN 2.0 Server (one count per
+// person per game per half hour), once it has enough for that period.
+// Until then (it started counting in November 2026), or if it can't be
+// reached, jsDelivr's numbers, which count every site using the game library.
+const OWN_PLAYS_MIN = { day: 100, week: 300, month: 1000, year: 3000 };
+async function fetchOwnPopularity(duration) {
+    if (typeof HOME_SERVER === "undefined" || (window.gnHomeDownUntil || 0) > Date.now()) return null;
+    try {
+        const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 8000);
+        const res = await fetch(`${HOME_SERVER}/api/plays?period=${duration}`, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
+        if (!res.ok) return null;
+        const map = await res.json();
+        const total = Object.values(map).reduce((a, b) => a + (Number(b) || 0), 0);
+        return total >= (OWN_PLAYS_MIN[duration] || 300) ? map : null;
+    } catch { return null; }
+}
 async function fetchPopularity(duration) {
+    const own = await fetchOwnPopularity(duration);
+    if (own) { popularityData[duration] = own; popularitySource[duration] = "gn2"; return true; }
+    popularitySource[duration] = "jsdelivr";
     const map = {};
     const url = p => `https://data.jsdelivr.com/v1/stats/packages/gh/freebuisness/html@main/files?period=${duration}&limit=100&page=${p}`;
     let page = 1, done = false, ok = false;
@@ -6471,6 +6514,10 @@ function createZoneCard(file) {
             flag.title = "A site moderator reported this game as broken. It may not load.";
         }
         badges.appendChild(flag);
+    } else if (typeof autoBrokenBadge === "function") {
+        // The GN 2.0 Server saw this game fail for many players (home-server.js)
+        const auto = autoBrokenBadge(file.id);
+        if (auto) badges.appendChild(auto);
     }
     // Partner games (html5games.com) may show their publisher's ads, so say so up front
     if (typeof isPartnerZone === "function" && isPartnerZone(file)) {
@@ -7859,6 +7906,7 @@ function openZone(file) {
         zoneViewer.style.display = "flex";
         zoneViewer.hidden = false;
         addRecentZone(file.id);
+        if (typeof sendHomePlay === "function") sendHomePlay(file.id);
         startPlaytime(file.id);
         currentGameId = String(file.id);
         updateRatingBar(file.id);
@@ -7884,6 +7932,7 @@ function openZone(file) {
         zoneViewer.style.display = "flex";
         zoneViewer.hidden = false;
         addRecentZone(file.id);
+        if (typeof sendHomePlay === "function") sendHomePlay(file.id);
         startPlaytime(file.id);
         currentGameId = String(file.id);
         updateRatingBar(file.id);
@@ -11433,6 +11482,7 @@ const CLOUD = {
     chunkChars: 500000,                      // Firestore docs max out at ~1 MB; smaller parts get through slow connections
     blobMin: 64 * 1024,                      // game data entries bigger than this are stored once, by content (see splitBlobs)
     maxChars: 18000000,                      // ~18 MB compressed cap per save
+    fbCopyMs: 30 * 60 * 1000,                // saves are copied to Firebase at most every 30 minutes (see savePart)
     keys: {
         syncedGen: "gnmath-cloud-synced-gen",
         syncedHash: "gnmath-cloud-synced-hash",
@@ -11504,6 +11554,10 @@ function markBlobPartDone(name) {
     } catch {}
 }
 function blobsOf(save) { return Array.isArray(save && save.blobs) ? save.blobs.filter(b => b && b.id) : []; }
+// Live Save (live-save.js) reuses unchanged databases between saves, so the
+// same entry objects come back: remember what each one was split into, so a
+// big entry isn't turned into text and fingerprinted again every time.
+const splitMemo = new WeakMap();
 async function splitBlobs(bundle) {
     const blobs = new Map();
     const indexedDB = [];
@@ -11512,8 +11566,15 @@ async function splitBlobs(bundle) {
         for (const st of db.stores) {
             const entries = [];
             for (const e of st.entries) {
+                const memo = e && typeof e === "object" ? splitMemo.get(e) : null;
+                if (memo && memo.small) { entries.push(e); continue; }
+                if (memo && blobPackCache.has(memo.id)) {
+                    if (!blobs.has(memo.id)) blobs.set(memo.id, { id: memo.id, n: memo.n, size: memo.size, db: db.name });
+                    entries.push({ __ref: memo.id, n: memo.n });
+                    continue;
+                }
                 const j = JSON.stringify(e);
-                if (j.length < CLOUD.blobMin) { entries.push(e); continue; }
+                if (j.length < CLOUD.blobMin) { if (e && typeof e === "object") splitMemo.set(e, { small: true }); entries.push(e); continue; }
                 const id = (await sha256Hex(j)).slice(0, 32);
                 let b = blobs.get(id);
                 if (!b) {
@@ -11522,6 +11583,7 @@ async function splitBlobs(bundle) {
                     b = { id, n: Math.max(1, Math.ceil(packed.length / CLOUD.chunkChars)), size: packed.length, db: db.name };
                     blobs.set(id, b);
                 }
+                if (e && typeof e === "object") splitMemo.set(e, { id: b.id, n: b.n, size: b.size });
                 entries.push({ __ref: b.id, n: b.n });
             }
             stores.push({ ...st, entries });
@@ -11552,9 +11614,10 @@ async function prepareCloudSave(bundle) {
 }
 // Sends the big entries the cloud doesn't have yet. have: ids already in a
 // save there. onPart(done, todo) for the progress bar.
-async function uploadBlobs(blobs, have, onPart) {
+// fbHave: when copying to Firebase this time, the ids Firebase already has.
+// Returns { sent, fbOk } (fbOk: every part is in Firebase too).
+async function uploadBlobs(blobs, have, onPart, fbHave = null) {
     const done = blobsDone();
-    const ref = saveDocRef().collection("blobs");
     const parts = [], check = [];
     for (const b of blobs) {
         if (have.has(b.id)) continue;
@@ -11563,29 +11626,45 @@ async function uploadBlobs(blobs, have, onPart) {
     // Parts sent before (a save that was cut off) but not in any save yet:
     // make sure they're still there, since another device may have cleaned them up
     for (let i = 0; i < check.length; i += 20) {
-        const snaps = await cloudStep(Promise.all(check.slice(i, i + 20).map(([b, j]) => ref.doc(`${b.id}_${j}`).get())), 60000, "Checking game data");
+        const snaps = await cloudStep(Promise.all(check.slice(i, i + 20).map(([b, j]) => savePart("blobs", `${b.id}_${j}`).exists())), 60000, "Checking game data");
         snaps.forEach((snap, k) => { if (!snap.exists) parts.push(check[i + k]); });
+    }
+    // Copying to Firebase: parts the server already has but Firebase doesn't
+    const toSend = new Set(parts.map(([b, j]) => `${b.id}_${j}`));
+    const fbOnly = [];
+    if (fbHave) for (const b of blobs) {
+        if (fbHave.has(b.id)) continue;
+        for (let j = 0; j < b.n; j++) if (!toSend.has(`${b.id}_${j}`)) fbOnly.push([b, j]);
+    }
+    let fbOk = true;
+    const total = parts.length + fbOnly.length;
+    for (let i = 0; i < fbOnly.length; i++) {
+        const [b, j] = fbOnly[i];
+        if (onPart) onPart(parts.length + i, total);
+        const packed = blobPackCache.get(b.id);
+        if (!packed) { fbOk = false; continue; }
+        if (!(await cloudStep(savePart("blobs", `${b.id}_${j}`).setFb({ d: packed.slice(j * CLOUD.chunkChars, (j + 1) * CLOUD.chunkChars) }), 60000, `Backing up game data (part ${i + 1} of ${fbOnly.length})`))) fbOk = false;
     }
     for (let i = 0; i < parts.length; i++) {
         const [b, j] = parts[i];
-        if (onPart) onPart(i, parts.length);
+        if (onPart) onPart(i, total);
         let packed = blobPackCache.get(b.id);
         if (!packed) throw new Error("game data changed while saving, try again");
         const name = `${b.id}_${j}`;
-        await cloudStep(ref.doc(name).set({ d: packed.slice(j * CLOUD.chunkChars, (j + 1) * CLOUD.chunkChars) }), 60000, `Uploading game data (part ${i + 1} of ${parts.length})`);
+        const inFb = await cloudStep(savePart("blobs", name).set({ d: packed.slice(j * CLOUD.chunkChars, (j + 1) * CLOUD.chunkChars) }, { fb: !!fbHave }), 60000, `Uploading game data (part ${i + 1} of ${parts.length})`);
+        if (!inFb) fbOk = false;
         markBlobPartDone(name);
     }
-    return parts.length;
+    return { sent: total, fbOk };
 }
 // Big entries no save points at anymore
 function dropBlobs(dropped, keep) {
     const keepIds = new Set(keep.flatMap(s => blobsOf(s).map(b => b.id)));
-    const ref = saveDocRef().collection("blobs");
     const gone = new Set();
     for (const b of dropped.flatMap(blobsOf)) {
         if (keepIds.has(b.id) || gone.has(b.id)) continue;
         gone.add(b.id);
-        for (let j = 0; j < (b.n || 1); j++) ref.doc(`${b.id}_${j}`).delete().catch(() => {});
+        for (let j = 0; j < (b.n || 1); j++) savePart("blobs", `${b.id}_${j}`).delete().catch(() => {});
     }
     if (gone.size) {
         try { localStorage.setItem(blobsDoneKey(), JSON.stringify([...blobsDone()].filter(x => !gone.has(x.replace(/_\d+$/, ""))))); } catch {}
@@ -11596,14 +11675,13 @@ async function joinBlobs(bundle) {
     if (!bundle || bundle.v !== 2) return bundle;
     const want = new Map();
     for (const db of bundle.indexedDB || []) for (const st of db.stores) for (const e of st.entries) if (e && e.__ref) want.set(e.__ref, e.n || 1);
-    const ref = saveDocRef().collection("blobs");
     const got = new Map();
     const ids = [...want.keys()];
     for (let i = 0; i < ids.length; i += 4) {
         await Promise.all(ids.slice(i, i + 4).map(async id => {
             const n = want.get(id);
-            const parts = await cloudStep(Promise.all(Array.from({ length: n }, (_, j) => ref.doc(`${id}_${j}`).get())), 90000, "Downloading game data");
-            if (parts.some(p => !p.exists)) throw new Error("cloud save is missing some game data, try again");
+            const parts = await cloudStep(Promise.all(Array.from({ length: n }, (_, j) => savePart("blobs", `${id}_${j}`).get())), 90000, "Downloading game data");
+            if (parts.some(p => !p.exists)) throw new Error("cloud save is missing some game data, try again" + homeSavesNote());
             const packed = parts.map(p => p.data().d).join("");
             got.set(id, JSON.parse(await b64ToText(packed)));
             blobPackCache.set(id, packed);
@@ -11881,6 +11959,93 @@ function progressIsLess(a, b) {
     return (a.level || 0) < (b.level || 0) || (a.playSec || 0) + 600 < (b.playSec || 0) * 0.8;
 }
 function saveDocRef() { return cloudDb.collection("saves").doc(cloudUser.uid); }
+// ── Where save data lives ───────────────────────────────────────────────────
+// The record of which save is newest (saves/{uid}) is in Firebase. The save
+// data itself (the chunks and blobs parts, up to ~18 MB per player) goes to the
+// GN 2.0 Server (js/home-server.js, which checks the player's Firebase sign-in).
+// Every 30 minutes a save is also copied to Firebase, and the record notes
+// that copy (fbCopy). So:
+//   - server down: saves go to Firebase instead, and a save that's only on the
+//     server loads from the Firebase copy (at most ~30 minutes older)
+//   - Firebase down or out of its daily limit: the server still has every save
+// Reading tries the server first (that keeps Firebase's usage low), then Firebase.
+const HOME_SAVES_RETRY_MS = 5 * 60 * 1000;
+const HOME_SLOW_MS = 8000;   // a save part taking longer than this from the server: ask Firebase too
+let homeSavesDownUntil = 0;
+let homeSaveRefused = "";   // why the server last turned a save piece down (save details)
+function homeSavesDown(why) { homeSavesDownUntil = Date.now() + HOME_SAVES_RETRY_MS; if (why) homeSaveRefused = why; }
+async function homeSaveFetch(path, opts = {}) {
+    if (typeof HOME_SERVER === "undefined" || !cloudUser || Date.now() < homeSavesDownUntil) throw new Error("home server not in use");
+    const token = await cloudUser.getIdToken();
+    const ctrl = new AbortController(), t = setTimeout(() => ctrl.abort(), 45000);
+    try {
+        const res = await fetch(`${HOME_SERVER}/api/saves/${encodeURIComponent(cloudUser.uid)}/${path}`, {
+            ...opts, cache: "no-store", signal: ctrl.signal, headers: { ...(opts.headers || {}), Authorization: "Bearer " + token }
+        });
+        if (res.status >= 500) { homeSavesDown(`the server had an error (${res.status})`); throw new Error("home server error " + res.status); }
+        return res;
+    } catch (e) {
+        if (e.name === "AbortError" || e instanceof TypeError) homeSavesDown(e.name === "AbortError" ? "it took over 45 seconds to answer" : "the connection failed");
+        throw e;
+    } finally { clearTimeout(t); }
+}
+// Same shape as a Firestore doc (get/set/delete), so the save code didn't change
+function savePart(kind, name) {
+    const fb = () => saveDocRef().collection(kind).doc(name);
+    const path = kind + "/" + encodeURIComponent(name);
+    return {
+        // Server first. If it hasn't answered within HOME_SLOW_MS, Firebase is
+        // asked too and whichever has the part first wins; if the server says
+        // no or is down, Firebase answers.
+        async get() {
+            const server = (async () => {
+                const res = await homeSaveFetch(path);
+                if (!res.ok) throw new Error("not on the server");
+                const d = await res.text();
+                return { exists: true, data: () => ({ d }) };
+            })();
+            const first = await Promise.race([
+                server.then(v => ({ v }), e => ({ e })),
+                new Promise(r => setTimeout(() => r({ slow: true }), HOME_SLOW_MS))
+            ]);
+            if (first.v) return first.v;
+            const fromFb = fb().get();
+            if (first.e) return fromFb;
+            try { return await Promise.any([server, fromFb.then(snap => snap.exists ? snap : Promise.reject(new Error("not in Firebase")))]); }
+            catch { return fromFb; }
+        },
+        // Only whether it's there (no download), for parts sent by a save that was cut off
+        async exists() {
+            try { if ((await homeSaveFetch(path, { method: "HEAD" })).ok) return { exists: true }; } catch {}
+            return fb().get();
+        },
+        // Resolves true if Firebase has it too. fb: also copy it to Firebase now.
+        async set(v, { fb: copy = false } = {}) {
+            let serverOk = false;
+            try {
+                const res = await homeSaveFetch(path, { method: "PUT", body: v.d, headers: { "Content-Type": "text/plain" } });
+                serverOk = res.ok;
+                // Not signed in there / not set up: stop trying for a while.
+                // Anything else (e.g. full): just this piece goes to Firebase.
+                if (!res.ok) { homeSaveRefused = `the server said ${res.status}`; if ([401, 403, 404, 405].includes(res.status)) homeSavesDown(); }
+            } catch {}
+            if (!serverOk) { await fb().set(v); return true; }   // then Firebase has to work
+            if (!copy) return false;
+            // The server has it: give Firebase up to 30 s, but a Firebase problem
+            // (e.g. its daily limit) doesn't fail the save
+            return Promise.race([
+                fb().set(v).then(() => true, e => { console.warn("Save part not copied to Firebase", e); return false; }),
+                new Promise(r => setTimeout(() => r(false), 30000))
+            ]);
+        },
+        // Firebase only: copying a part the server already has
+        setFb(v) { return fb().set(v).then(() => true, () => false); },
+        delete() {
+            return Promise.allSettled([homeSaveFetch(path, { method: "DELETE" }), fb().delete()]);
+        }
+    };
+}
+function homeSavesNote() { return Date.now() < homeSavesDownUntil ? " (the GN 2.0 Server may be down right now)" : ""; }
 async function fetchCloudMeta() {
     const snap = await saveDocRef().get();
     return snap.exists ? snap.data() : null;
@@ -11929,8 +12094,17 @@ async function runCloudUpload(opts) {
 }
 async function cloudAutosaveTick() {
     if (!cloudUser) return;
+    // Live Save is working: it saves to the GN 2.0 Server as you play, so the
+    // full cloud save only needs to run every 10 minutes (and it catches
+    // anything Live Save missed)
+    if (typeof liveSaveActive === "function" && liveSaveActive() && Date.now() - (window.gnFullSaveAt || 0) < 10 * 60000) {
+        liveSaveNow(document.hidden ? "hidden" : "autosave");
+        return true;
+    }
     try { if (typeof syncOpenGameFiles === "function") await syncOpenGameFiles(); } catch {}
-    return uploadCloudSave({ background: true });
+    const ok = await uploadCloudSave({ background: true });
+    if (ok) window.gnFullSaveAt = Date.now();
+    return ok;
 }
 function startCloudAutosave() {
     clearInterval(cloudAutosaveTimer);
@@ -11995,6 +12169,7 @@ async function uploadCloudSaveNow({ force = false, background = false } = {}) {
         noteSaveState("saving", { step: "Checking your account", startedAt: Date.now(), part: 0, parts: 0 }); setCloudStatus("Saving…");
         const meta = await cloudStep(fetchCloudMeta(), 30000, "Checking your account");
         clearTimeout(cloudSyncRetryTimer); cloudSyncRetryDelay = 0;
+        if (typeof liveAdopt === "function") liveAdopt(meta);
         const localGen = localStorage.getItem(CLOUD.keys.syncedGen);
         if (meta && meta.gen !== localGen && !force) {
             // Someone saved from another device since this device last synced.
@@ -12032,13 +12207,20 @@ async function uploadCloudSaveNow({ force = false, background = false } = {}) {
         const have = new Set([meta, ...keptSaves(meta)].flatMap(blobsOf).map(b => b.id));
         const gen = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
         const chunkCount = Math.max(1, Math.ceil(packed.length / CLOUD.chunkChars));
-        const chunks = saveDocRef().collection("chunks");
-        const blobParts = await uploadBlobs(blobs, have, (i, n) => {
+        // Copy to Firebase too if the last copy is 30+ minutes old (or the
+        // server is down right now, so everything has to go there anyway)
+        const oldFbCopy = meta && meta.fbCopy && meta.fbCopy.gen ? meta.fbCopy : null;
+        const copyNow = !oldFbCopy || Date.now() - (oldFbCopy.at || 0) >= CLOUD.fbCopyMs || Date.now() < homeSavesDownUntil;
+        const fbHave = copyNow ? new Set(blobsOf(oldFbCopy).map(b => b.id)) : null;
+        const up = await uploadBlobs(blobs, have, (i, n) => {
             noteSaveState("saving", { step: `Uploading game data (part ${i + 1} of ${n})`, part: i, parts: n + chunkCount, size: total });
-        });
+        }, fbHave);
+        const blobParts = up.sent;
+        let fbOk = up.fbOk;
         for (let i = 0; i < chunkCount; i++) {
             noteSaveState("saving", { step: `Uploading part ${i + 1} of ${chunkCount}`, part: blobParts + i, parts: blobParts + chunkCount, size: total });
-            await cloudStep(chunks.doc(`${gen}_${i}`).set({ d: packed.slice(i * CLOUD.chunkChars, (i + 1) * CLOUD.chunkChars) }), 60000, `Uploading part ${i + 1} of ${chunkCount}`);
+            const inFb = await cloudStep(savePart("chunks", `${gen}_${i}`).set({ d: packed.slice(i * CLOUD.chunkChars, (i + 1) * CLOUD.chunkChars) }, { fb: copyNow }), 60000, `Uploading part ${i + 1} of ${chunkCount}`);
+            if (!inFb) fbOk = false;
         }
         noteSaveState("saving", { step: "Finishing up", part: 1, parts: 1 });
         // Replacing the cloud save keeps the old one for a week; expired ones are deleted
@@ -12050,8 +12232,12 @@ async function uploadCloudSaveNow({ force = false, background = false } = {}) {
         kept = kept.filter(k => !drop.includes(k));
         if (meta && meta.gen && !replacing) drop.push(meta);   // an autosave over this device's own save
         const blobList = blobs.map(b => ({ id: b.id, n: b.n }));
+        // The Firebase copy: this save if it was fully copied, else the last one
+        const fbCopy = copyNow && fbOk ? { gen, chunkCount, hash, sum, blobs: blobList, at: now } : oldFbCopy;
+        if (oldFbCopy && fbCopy !== oldFbCopy) drop.push(oldFbCopy);
         await cloudStep(saveDocRef().set({
             gen, chunkCount, hash, sum, blobs: blobList,
+            ...(fbCopy ? { fbCopy } : {}),
             size: total,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             kept
@@ -12059,10 +12245,10 @@ async function uploadCloudSaveNow({ force = false, background = false } = {}) {
         localStorage.setItem(CLOUD.keys.syncedGen, gen);
         localStorage.setItem(CLOUD.keys.syncedHash, hash);
         for (const old of drop) {
-            if (old.gen === gen || kept.some(k => k.gen === old.gen)) continue;
-            for (let i = 0; i < (old.chunkCount || 0); i++) chunks.doc(`${old.gen}_${i}`).delete().catch(() => {});
+            if (old.gen === gen || kept.some(k => k.gen === old.gen) || (fbCopy && old.gen === fbCopy.gen)) continue;
+            for (let i = 0; i < (old.chunkCount || 0); i++) savePart("chunks", `${old.gen}_${i}`).delete().catch(() => {});
         }
-        dropBlobs(drop, [{ blobs: blobList }, ...kept]);
+        dropBlobs(drop, [{ blobs: blobList }, ...kept, ...(fbCopy ? [fbCopy] : [])]);
         noteSaveState("ok", { size: total, sum, left });
         setCloudStatus("Saved to cloud — " + new Date().toLocaleTimeString() + (left.length ? `. Left out (too big, kept on this device): ${left.map(l => `${l.files} item${l.files === 1 ? "" : "s"} from ${l.name} (${l.mb} MB)`).join(", ")}` : ""));
         return true;
@@ -12102,8 +12288,7 @@ async function keepDeviceCopyNow() {
         await uploadBlobs(blobs, new Set([meta, ...keptSaves(meta)].flatMap(blobsOf).map(b => b.id)));
         const gen = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + "d";
         const chunkCount = Math.max(1, Math.ceil(packed.length / CLOUD.chunkChars));
-        const chunks = saveDocRef().collection("chunks");
-        for (let i = 0; i < chunkCount; i++) await chunks.doc(`${gen}_${i}`).set({ d: packed.slice(i * CLOUD.chunkChars, (i + 1) * CLOUD.chunkChars) });
+        for (let i = 0; i < chunkCount; i++) await savePart("chunks", `${gen}_${i}`).set({ d: packed.slice(i * CLOUD.chunkChars, (i + 1) * CLOUD.chunkChars) });
         meta = await fetchCloudMeta();
         if (!meta) return;
         const kept = [{ gen, chunkCount, sum, at: Date.now(), until: Date.now() + KEEP_REPLACED_MS, device: true, blobs: blobs.map(b => ({ id: b.id, n: b.n })) }, ...keptSaves(meta)].slice(0, KEEP_REPLACED_MAX);
@@ -12123,17 +12308,30 @@ async function downloadCloudSave({ previous = "" } = {}) {
             if (!k) { setCloudStatus("That earlier cloud save isn't there anymore."); return false; }
             meta = k;
         }
-        const chunks = saveDocRef().collection("chunks");
-        const parts = await cloudStep(Promise.all(
-            Array.from({ length: meta.chunkCount }, (_, i) => chunks.doc(`${meta.gen}_${i}`).get())
-        ), 90000, "Downloading your cloud save");
-        if (parts.some(p => !p.exists)) throw new Error("cloud save is incomplete, try again");
-        const json = await b64ToText(parts.map(p => p.data().d).join(""));
-        const bundle = await joinBlobs(JSON.parse(json));
+        const load = async m => {
+            const parts = await cloudStep(Promise.all(
+                Array.from({ length: m.chunkCount }, (_, i) => savePart("chunks", `${m.gen}_${i}`).get())
+            ), 90000, "Downloading your cloud save");
+            if (parts.some(p => !p.exists)) throw new Error("cloud save is incomplete, try again" + homeSavesNote());
+            return joinBlobs(JSON.parse(await b64ToText(parts.map(p => p.data().d).join(""))));
+        };
+        let bundle, usedBackup = false;
+        try { bundle = await load(meta); }
+        catch (e) {
+            // The newest save is only on the GN 2.0 Server and it's down: load the
+            // Firebase copy instead (up to ~30 minutes older)
+            const backup = !previous && meta.fbCopy && meta.fbCopy.gen && meta.fbCopy.gen !== meta.gen ? meta.fbCopy : null;
+            if (!backup) throw e;
+            bundle = await load(backup);
+            usedBackup = true;
+            const mins = Math.max(1, Math.round((Date.now() - (backup.at || Date.now())) / 60000));
+            try { sessionStorage.setItem("gnmath-cloud-backup-note", `The GN 2.0 Server is down, so your save from ${mins} minute${mins === 1 ? "" : "s"} earlier was loaded. Your newest save is kept in Account → Earlier cloud saves.`); } catch {}
+        }
         if (typeof zoneViewer !== "undefined" && zoneViewer.style.display === "flex") closeZone();
         await applyCloudBundle(bundle);
-        if (previous) {
-            // Going back: the next save from this device becomes the cloud save again
+        if (previous || usedBackup) {
+            // Going back (or loaded the older Firebase copy): the next save from this
+            // device becomes the cloud save, and the one it replaces is kept for a week
             localStorage.removeItem(CLOUD.keys.syncedHash);
             localStorage.setItem(CLOUD.keys.pendingUndo, "1");
         } else {
@@ -12157,6 +12355,7 @@ async function cloudSyncOnSignIn() {
     try {
         const meta = await cloudStep(fetchCloudMeta(), 30000, "Checking your account");
         clearTimeout(cloudSyncRetryTimer); cloudSyncRetryDelay = 0;
+        if (typeof liveAdopt === "function") liveAdopt(meta);
         const localGen = localStorage.getItem(CLOUD.keys.syncedGen);
         // Progress the owner gave back to this account (tools/recover_save.mjs)
         if (meta && meta.grant && typeof applyGrant === "function") { try { applyGrant(meta.grant); } catch (e) { console.warn(e); } }
@@ -12633,6 +12832,8 @@ async function cloudDeleteAccount() {
         if (hasPassword()) await cloudUser.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(cloudUser.email, pw));
         else await cloudUser.reauthenticateWithPopup(googleProvider());
         cloudBusy = true;
+        homeSavesDownUntil = 0;
+        await homeSaveFetch("", { method: "DELETE" }).catch(() => {});   // everything on the home server
         const chunks = await saveDocRef().collection("chunks").get();
         await Promise.all(chunks.docs.map(d => d.ref.delete()));
         const blobDocs = await saveDocRef().collection("blobs").get().catch(() => ({ docs: [] }));
@@ -12738,6 +12939,12 @@ const agoText = ms => { const m = Math.floor(ms / 60000); return m < 1 ? "just n
 const inText = ms => { const sec = Math.max(0, Math.round(ms / 1000)); return sec < 60 ? `${sec} s` : `${Math.ceil(sec / 60)} min`; };
 function saveChipInfo() {
     const s = cloudSaveState;
+    // Live Save working (live-save.js): a rocket and "Live saved 12s ago",
+    // unless a full save is going up or something needs attention
+    if (!["saving", "retry", "error", "conflict"].includes(s.phase) && typeof liveSaveActive === "function" && liveSaveActive()) {
+        const at = liveState.savedAt, sec = Math.round((Date.now() - at) / 1000);
+        return { cls: "ok live" + (at && sec < 4 ? " fresh" : ""), icon: "liveSave", text: at && sec < 300 ? "Live saved " + (sec < 10 ? "just now" : sec < 60 ? `${sec}s ago` : `${Math.floor(sec / 60)} min ago`) : "Live Save on" };
+    }
     switch (s.phase) {
         case "saving": {
             const slow = Date.now() - s.stepAt > 20000;
@@ -12761,7 +12968,7 @@ function renderSaveChip() {
     el.className = "save-chip " + info.cls;
     el.title = "Save details";
     el.setAttribute("aria-label", info.text + ". Show save details");
-    el.innerHTML = gnIcon(info.cls === "warn" ? "warning" : info.cls === "busy" ? "cloud" : "check") + "<span></span>";
+    el.innerHTML = gnIcon(info.icon || (info.cls === "warn" ? "warning" : info.cls === "busy" ? "cloud" : "check")) + "<span></span>";
     el.lastChild.textContent = info.text;
     renderSaveDetails();
 }
@@ -12934,6 +13141,7 @@ function renderSaveDetails() {
     if (s.phase === "conflict") rows.push(["Why", "Another device saved to your account after this one. Open Account to pick which progress to keep."]);
     if (s.phase === "paused") rows.push(["Why", "The site used up today's cloud saves (Firebase's daily limit). They start again tomorrow."]);
     if (s.phase === "error") rows.push(["What happened", escapeHtml(s.error || "The cloud turned the save down without saying why. Your progress is safe on this device."), true]);
+    if (typeof liveSaveStatusText === "function") { const t = liveSaveStatusText(); if (t) rows.push(["Live Save", escapeHtml(t), true]); }
     rows.push(["Last cloud save", s.lastAt ? `${new Date(s.lastAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} (${agoText(now - s.lastAt)})` : "not yet on this device"]);
     if (s.size) rows.push(["Size", mb(s.size)]);
     if (s.left && s.left.length) rows.push(["Too big for the cloud", s.left.map(l => `${l.files} item${l.files === 1 ? "" : "s"} from ${l.name} (${l.mb} MB)`).join(", ") + ". They stay on this device; the rest is in the cloud. These are usually a game's downloaded files, not saves."]);
@@ -13188,6 +13396,15 @@ async function initCloudAccounts() {
     }
 }
 initCloudAccounts();
+
+// After loading the Firebase copy of a save because the GN 2.0 Server was down
+// (downloadCloudSave), say so once the page has reloaded
+setTimeout(() => {
+    try {
+        const note = sessionStorage.getItem("gnmath-cloud-backup-note");
+        if (note && typeof notify === "function") { sessionStorage.removeItem("gnmath-cloud-backup-note"); notify(note, { duration: 15000 }); }
+    } catch {}
+}, 1500);
 
 </script>
 <script>/* js/library.js */
@@ -17628,7 +17845,7 @@ function openAdminPanel(...args) {
 
 </script>
 <!-- The Admin Panel loads only when opened (js/admin-core.js); its version is stamped here -->
-<meta name="gn-admin-js" data-src="js/admin.js?v=e92c4ac3a7">
+<meta name="gn-admin-js" data-src="js/admin.js?v=8909a8f5a9">
 <script>/* js/presence.js */
 // ═════════════════════════════════════════════════════════════════════════════
 // "People online now". Each open copy of the site writes a tiny note to the
@@ -17888,6 +18105,22 @@ window.gnActiveUsers = { count: null, at: 0, error: null };
             updateTransforms: [{ fieldPath: "t", setToServerValue: "REQUEST_TIME" }]
         }] };
     }
+    // The GN 2.0 Server takes the heartbeat when it can be reached (no Firebase
+    // write); it adds everyone up and writes the live/now summary itself. If it
+    // can't be reached, the heartbeat goes to Firestore like before (and the
+    // server is tried again 5 minutes later).
+    async function beatServer() {
+        if (typeof HOME_SERVER === "undefined" || (window.gnHomeDownUntil || 0) > Date.now()) return false;
+        const body = { id: presenceId(), s: PRESENCE.site, g: presenceGameAllowed() ? currentGame() : "" };
+        if (fbOn()) { const t = getFbTally(); body.u = { [t.day]: { r: Math.min(100000, t.r), w: Math.min(100000, t.w) } }; }
+        try {
+            const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 8000);
+            const res = await fetch(HOME_SERVER + "/api/presence", { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(body), signal: ctrl.signal }).finally(() => clearTimeout(timer));
+            if (res.ok) { gameNoted = body.g; return true; }
+        } catch {}
+        window.gnHomeDownUntil = Date.now() + 5 * 60000;
+        return false;
+    }
     async function beat() {
         if (booted || document.hidden || (fbOn() && fbBackgroundPaused())) return;
         lastBeat = Date.now();
@@ -17898,6 +18131,10 @@ window.gnActiveUsers = { count: null, at: 0, error: null };
         // Nothing from this browser for a while: a new visit, so a new session
         const newVisit = Date.now() - Math.max(prevBeat, presenceShared().sessionAt || 0) > PRESENCE.activeMs;
         try {
+            if (await beatServer()) {
+                if (newVisit) { setPresenceShared({ sessionAt: Date.now() }); writeSession(); }
+                return;
+            }
             if (fbOn()) fbCount(0, 1);
             const withUsage = presenceUsageAllowed();
             try {
@@ -17985,6 +18222,8 @@ window.gnActiveUsers = { count: null, at: 0, error: null };
 
     // Adds up every browser's Firebase count for today (about 1 read per 1,000 browsers)
     async function sumUsage() {
+        // The GN 2.0 Server adds everyone's usage up (live.js gets it from there)
+        if (Date.now() - (window.gnServerUsageAt || 0) < 10 * 60000) return;
         const day = fbDayKey();
         try {
             fbCount(1, 0);
@@ -18234,14 +18473,53 @@ function renderTop10() {
         applyLiveBadges();
     }
 
+    // The GN 2.0 Server adds everyone up every few minutes, so when it can be
+    // reached the counts, the online graph, the week's Top 10 and the Firebase
+    // use total all come from one request to it (no Firebase reads), and this
+    // browser never needs to do the round itself.
+    const SERVER_READ_MS = 90 * 1000;
+    async function readServer() {
+        if (typeof HOME_SERVER === "undefined" || (window.gnHomeDownUntil || 0) > Date.now()) return false;
+        try {
+            const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 8000);
+            const res = await fetch(HOME_SERVER + "/api/live", { cache: "no-store", signal: ctrl.signal }).finally(() => clearTimeout(timer));
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            const d = await res.json();
+            if (!d.at || Date.now() - d.at > 12 * 60000) return false;   // just started, nothing added up yet
+            const games = Object.entries(d.games || {}).map(([k, n]) => [k, Number(n) || 0]).filter(([, n]) => n > 0);
+            liveNow = { online: Number(d.online) || 0, games: new Map(games), at: d.at, updateTime: null };
+            const hist = parseHist(d.h);
+            setShared({ readAt: Date.now(), fromServer: true, online: liveNow.online, games, at: d.at, updateTime: null, h: packHist(hist) });
+            setHist(hist);
+            if (liveNow.online > 0) {
+                window.gnActiveUsers = { count: Math.max(1, liveNow.online), at: Date.now(), error: null };
+                if (typeof updateSiteStatus === "function") updateSiteStatus();
+            }
+            if (d.week && d.week.id === liveWeekId()) {
+                liveWeek = { week: d.week.id, p: d.week.p || {}, readAt: Date.now() };
+                try { localStorage.setItem(LIVE.weekKey, JSON.stringify(liveWeek)); } catch {}
+            }
+            if (d.usage && fbOn() && typeof setFbUsage === "function" && d.usage.r + d.usage.w > 0) {
+                setFbUsage(d.usage.r, d.usage.w);
+                window.gnServerUsageAt = Date.now();
+            }
+            applyLiveBadges();
+            return true;
+        } catch {
+            window.gnHomeDownUntil = Date.now() + 5 * 60000;
+            return false;
+        }
+    }
     async function tick() {
         if (document.hidden || busy) return;
         if (fbOn() && fbPaused()) return;
         busy = true;
         try {
             const s = shared();
-            const readEvery = fbOn() ? fbEvery(LIVE.readMs) : LIVE.readMs;
-            if (Date.now() - (s.readAt || 0) < readEvery) {
+            const readEvery = s.fromServer ? SERVER_READ_MS : fbOn() ? fbEvery(LIVE.readMs) : LIVE.readMs;
+            if (Date.now() - (s.readAt || 0) >= readEvery && await readServer()) {
+                // Counts came from the GN 2.0 Server
+            } else if (Date.now() - (s.readAt || 0) < readEvery) {
                 // Another tab read it recently
                 if (s.games) { liveNow = { online: s.online, games: new Map(s.games), at: s.at, updateTime: s.updateTime }; applyLiveBadges(); }
                 if (s.h && !window.gnOnlineHistory) setHist(parseHist(s.h));
@@ -18318,6 +18596,7 @@ window.__gnmathGameFatal = function (ev) {
         gameFatalShownFor = win;
         const [what, help] = GAME_FATAL_TEXT[ev.kind] || GAME_FATAL_TEXT.crash;
         const detail = String(ev.message || "").trim();
+        if (typeof reportGameTrouble === "function") reportGameTrouble(zone.id, ev.kind, detail);
         closeGameFatal();
         // Red bar at the top
         const bar = document.createElement("div");
@@ -19555,6 +19834,346 @@ function isSpookyZone(z) {
 })();
 
 </script>
+<script>/* js/home-server.js */
+// ═════════════════════════════════════════════════════════════════════════════
+// Home server: Lincoln's spare PC, reached at data.learnresearch.org through a
+// Cloudflare tunnel. The site never needs it; it's a backup that:
+//   - is the last-resort source for game files and game lists (the "home"
+//     mirror in app.js, same address shape as jsDelivr: /gh/owner/repo@ref/path)
+//   - counts plays on this site (/api/play)
+//   - keeps a full copy of the site at its own address, in case this one is
+//     taken down
+// Home upload is only ~20 Mbps, so other sources are always tried first.
+// ═════════════════════════════════════════════════════════════════════════════
+const HOME_VISITOR_KEY = "gnmath-home-visitor";
+let homeServerState = { level: "info", detail: "Checking…" };
+
+async function checkHomeServer() {
+    try {
+        const ctrl = new AbortController(), t = setTimeout(() => ctrl.abort(), 6000);
+        const res = await fetch(HOME_SERVER + "/health?t=" + Date.now(), { signal: ctrl.signal, cache: "no-store" }).finally(() => clearTimeout(t));
+        const j = res.ok ? await res.json() : null;
+        homeServerState = j && j.ok
+            ? { level: "ok", detail: "Online (cloud saves, play counts and backup game source)" }
+            : { level: "info", detail: "Not answering right now. The site works fine without it." };
+    } catch {
+        homeServerState = { level: "info", detail: "Can't reach it from this network. The site works fine without it." };
+    }
+    if (typeof updateSiteStatus === "function") updateSiteStatus();
+}
+// Never makes the status light worse: the site doesn't depend on it
+function homeServerCheck() { return homeServerState; }
+
+// A random id per browser (not tied to an account), so the server can ignore
+// one person opening the same game over and over. Players at school share an
+// IP address, so the address alone can't tell them apart.
+function homeVisitorId() {
+    try {
+        let v = localStorage.getItem(HOME_VISITOR_KEY);
+        if (!v) { v = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem(HOME_VISITOR_KEY, v); }
+        return v;
+    } catch { return ""; }
+}
+// sendBeacon with plain text is a "simple" request: no CORS preflight, and it
+// still goes out if the page closes right after
+function sendHomePlay(id) {
+    try {
+        const body = new Blob([JSON.stringify({ id: String(id), v: homeVisitorId() })], { type: "text/plain" });
+        if (navigator.sendBeacon) navigator.sendBeacon(HOME_SERVER + "/api/play", body);
+        else fetch(HOME_SERVER + "/api/play", { method: "POST", body, keepalive: true, mode: "no-cors" }).catch(() => {});
+    } catch {}
+}
+
+checkHomeServer();
+setInterval(checkHomeServer, 5 * 60 * 1000);
+
+// ── Games that won't load for real players ──────────────────────────────────
+// When a game crashes or never starts (game-error.js), the site tells the GN
+// 2.0 Server. If 3+ different people hit it within a day and it fails for a
+// big share of its plays, the server flags it, and its card shows
+// "Not loading for many". Lost graphics aren't sent: that's the computer
+// running low on memory, not the game.
+const AUTO_BROKEN_KEY = "gnmath-auto-broken";
+let autoBroken = (() => { try { return JSON.parse(localStorage.getItem(AUTO_BROKEN_KEY) || "null") || { at: 0, ids: {} }; } catch { return { at: 0, ids: {} }; } })();
+function reportGameTrouble(id, kind, msg) {
+    if (kind === "graphics" || !id) return;
+    try {
+        const body = new Blob([JSON.stringify({ id: String(id), kind: String(kind || "crash"), msg: String(msg || "").slice(0, 200), v: homeVisitorId() })], { type: "text/plain" });
+        if (navigator.sendBeacon) navigator.sendBeacon(HOME_SERVER + "/api/game-report", body);
+        else fetch(HOME_SERVER + "/api/game-report", { method: "POST", body, keepalive: true, mode: "no-cors" }).catch(() => {});
+    } catch {}
+}
+function autoBrokenInfo(id) { return autoBroken.ids[String(id)] || null; }
+function autoBrokenBadge(id) {
+    const g = autoBrokenInfo(id);
+    if (!g) return null;
+    const el = document.createElement("div");
+    el.className = "card-flag card-autoflag";
+    el.innerHTML = `${typeof gnIcon === "function" ? gnIcon("warning") : "⚠"} Not loading for many`;
+    el.title = `${g.people} players couldn't get this game to load in the last day. It may not work right now.`;
+    return el;
+}
+function applyAutoBrokenFlags() {
+    document.querySelectorAll(".zone-item[data-id]").forEach(card => {
+        const old = card.querySelector(".card-autoflag");
+        const has = !!autoBrokenInfo(card.dataset.id);
+        if (!has) { if (old) old.remove(); return; }
+        if (old || card.querySelector(".card-flag")) return;   // already flagged by reports
+        let box = card.querySelector(".card-badges");
+        if (!box) { box = document.createElement("div"); box.className = "card-badges"; card.appendChild(box); }
+        const b = autoBrokenBadge(card.dataset.id);
+        if (b) box.appendChild(b);
+    });
+}
+async function loadGameHealth() {
+    try {
+        const res = await fetch(HOME_SERVER + "/api/game-health");
+        if (!res.ok) return;
+        const j = await res.json();
+        autoBroken = { at: Date.now(), ids: Object.fromEntries((j.flagged || []).map(g => [String(g.id), { people: g.people, rate: g.rate }])) };
+        try { localStorage.setItem(AUTO_BROKEN_KEY, JSON.stringify(autoBroken)); } catch {}
+        applyAutoBrokenFlags();
+    } catch {}
+}
+setTimeout(loadGameHealth, 6000);
+setInterval(() => { if (!document.hidden) loadGameHealth(); }, 10 * 60 * 1000);
+
+// ── Is Cloudflare caching the server's game files? ─────────────────────────
+// With a Cloudflare cache rule for data.learnresearch.org/gh/*, Cloudflare
+// keeps each game file after the first download, so the PC's upload speed no
+// longer matters. A small file is asked for twice: if Cloudflare says it was
+// cached (or stored it), the server is promoted to the second game source
+// (promoteHomeMirror in app.js). Remembered for 6 hours.
+const HOME_CACHED_KEY = "gnmath-home-cached";
+async function checkHomeCached() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(HOME_CACHED_KEY) || "null");
+        if (saved && Date.now() - saved.at < 6 * 3600000) { window.gnHomeCached = saved.on; if (saved.on && typeof promoteHomeMirror === "function") promoteHomeMirror(); return; }
+    } catch {}
+    let on = false;
+    try {
+        const url = HOME_SERVER + "/gh/SCHSwork/math@main/manifest.json";
+        for (let i = 0; i < 2 && !on; i++) {
+            const res = await fetch(url, { cache: "no-store" });
+            const st = (res.headers.get("cf-cache-status") || "").toUpperCase();
+            on = res.ok && /^(HIT|MISS|EXPIRED|REVALIDATED|UPDATING|STALE)$/.test(st);
+        }
+    } catch {}
+    window.gnHomeCached = on;
+    try { localStorage.setItem(HOME_CACHED_KEY, JSON.stringify({ at: Date.now(), on })); } catch {}
+    if (on && typeof promoteHomeMirror === "function") promoteHomeMirror();
+}
+setTimeout(checkHomeCached, 8000);
+
+</script>
+<script>/* js/live-save.js */
+// ═════════════════════════════════════════════════════════════════════════════
+// Live Save: while a signed-in player plays, their progress is saved to the
+// GN 2.0 Server every 20 seconds (only when something changed), so closing the
+// tab or the Chromebook loses at most a few seconds. The server turns the
+// newest Live Save into a normal cloud save in Firebase when the player goes
+// offline (and every 30 minutes during long sessions). The full cloud save
+// still runs every 10 minutes as a safety net (accounts.js), so nothing Live
+// Save misses is lost.
+//
+// Kept light for slow school Chromebooks:
+//   • It only does anything when a game (or the site) actually wrote save data:
+//     writes to localStorage and IndexedDB are noticed as they happen.
+//   • Only the databases that changed are read again; the rest, and big game
+//     files that didn't change, are reused from memory (splitMemo in accounts.js).
+//   • It waits for an idle moment, and never runs while a game is loading.
+//   • If a Live Save makes the page stutter (300 ms of its own long tasks) twice,
+//     Live Save turns itself off on that computer for a day and the normal
+//     cloud save goes back to every 2 minutes.
+// If the GN 2.0 Server can't be reached, Live Save waits and the normal cloud
+// save (Firebase) carries on as before.
+// ═════════════════════════════════════════════════════════════════════════════
+const LIVE_SAVE = {
+    everyMs: 20000,
+    jankMs: 300,                          // long-task time during one Live Save that counts as "slow"
+    slowKey: "gnmath-live-save-slow2",    // when this computer was found too slow
+    hashKey: "gnmath-live-hash"
+};
+let liveDirty = { ls: true, dbs: new Set(["*"]) };
+const liveDbCache = new Map();            // database name -> what was read last time
+const liveState = { hash: "", savedAt: 0, okAt: 0, busy: false, have: new Set(), slowHits: 0, ticks: 0, why: "" };
+// For the save details popup: what Live Save is doing, or why it isn't
+function liveSaveStatusText() {
+    if (typeof cloudUser === "undefined" || !cloudUser) return "";
+    if (liveSlowDevice()) return "Off on this computer for today: saving made the page stutter, so it saves every 2 minutes instead";
+    if (typeof homeSavesDownUntil !== "undefined" && Date.now() < homeSavesDownUntil) return "Waiting: the GN 2.0 Server can't be used right now" + (typeof homeSaveRefused !== "undefined" && homeSaveRefused ? ` (${homeSaveRefused})` : "") + ". Trying again in " + Math.max(1, Math.ceil((homeSavesDownUntil - Date.now()) / 60000)) + " min";
+    if (liveState.why) return liveState.why;
+    if (liveState.savedAt) return "On · last saved " + new Date(liveState.savedAt).toLocaleTimeString();
+    if (liveState.okAt) return "On · nothing new to save yet";
+    return "Starting…";
+}
+
+function liveSlowDevice() {
+    try { return Date.now() - Number(localStorage.getItem(LIVE_SAVE.slowKey) || 0) < 86400000; } catch { return false; }
+}
+// Working right now: signed in, the server answering, recent success
+function liveSaveActive() {
+    return !!(typeof cloudUser !== "undefined" && cloudUser && typeof HOME_SERVER !== "undefined"
+        && !liveSlowDevice() && Date.now() >= (typeof homeSavesDownUntil !== "undefined" ? homeSavesDownUntil : 0)
+        && liveState.okAt && Date.now() - liveState.okAt < 3 * 60000);
+}
+// The server made this browser's Live Save the cloud save (player went offline
+// or a long session): it's this browser's own progress, so carry on from it
+// instead of treating it as "another device saved".
+function liveAdopt(meta) {
+    try {
+        const me = typeof window.gnSessionId === "function" ? window.gnSessionId() : "";
+        if (!meta || !meta.liveSid || !me || meta.liveSid !== me || !meta.gen) return false;
+        if (localStorage.getItem(CLOUD.keys.syncedGen) === meta.gen) return false;
+        localStorage.setItem(CLOUD.keys.syncedGen, meta.gen);
+        if (meta.hash) localStorage.setItem(CLOUD.keys.syncedHash, meta.hash);
+        return true;
+    } catch { return false; }
+}
+
+// ── Noticing writes ─────────────────────────────────────────────────────────
+function liveWatchWindow(w) {
+    try {
+        if (!w || w.__gnLiveWatch) return;
+        w.__gnLiveWatch = true;
+        if (w !== window) liveDirty.dbs.add("*");     // a new game page: read everything once
+        const S = w.Storage && w.Storage.prototype;
+        if (S) for (const m of ["setItem", "removeItem", "clear"]) {
+            const o = S[m];
+            if (typeof o !== "function") continue;
+            S[m] = function (key) {
+                try { if (this === w.localStorage && (m === "clear" || !isCloudExcludedStorageKey(String(key)))) liveDirty.ls = true; } catch {}
+                return o.apply(this, arguments);
+            };
+        }
+        const P = w.IDBObjectStore && w.IDBObjectStore.prototype;
+        if (P) for (const m of ["put", "add", "delete", "clear"]) {
+            const o = P[m];
+            if (typeof o !== "function") continue;
+            P[m] = function () {
+                try { liveDirty.dbs.add(this.transaction.db.name); } catch { liveDirty.dbs.add("*"); }
+                return o.apply(this, arguments);
+            };
+        }
+        const F = w.IDBFactory && w.IDBFactory.prototype;
+        if (F && typeof F.deleteDatabase === "function") {
+            const od = F.deleteDatabase;
+            F.deleteDatabase = function (name) { liveDirty.dbs.add(String(name)); return od.apply(this, arguments); };
+        }
+    } catch {}
+}
+liveWatchWindow(window);
+// Each game runs in its own frame (a new page every time a game opens)
+setInterval(() => {
+    try { if (typeof zoneFrame !== "undefined" && zoneFrame && zoneFrame.contentWindow) liveWatchWindow(zoneFrame.contentWindow); } catch {}
+}, 500);
+
+// ── Saving ──────────────────────────────────────────────────────────────────
+const liveIdle = () => new Promise(r => {
+    if (document.hidden || !window.requestIdleCallback) return setTimeout(r, 0);
+    requestIdleCallback(() => r(), { timeout: 3000 });
+});
+async function liveCollect(dirty) {
+    const bundle = { v: 1, localStorage: {}, cookies: document.cookie, indexedDB: [] };
+    for (const key of Object.keys(localStorage).sort()) {
+        if (!isCloudExcludedStorageKey(key)) bundle.localStorage[key] = localStorage.getItem(key);
+    }
+    const dbs = indexedDB.databases ? await indexedDB.databases() : [];
+    const seen = new Set();
+    for (const info of dbs) {
+        if (!info.name || isCloudExcludedDb(info.name)) continue;
+        seen.add(info.name);
+        let d = liveDbCache.get(info.name);
+        if (!d || dirty.dbs.has("*") || dirty.dbs.has(info.name) || d.version !== info.version) {
+            try { d = await readIndexedDb(info.name, info.version); liveDbCache.set(info.name, d); }
+            catch { continue; }
+            await liveIdle();
+        }
+        bundle.indexedDB.push(d);
+    }
+    for (const name of [...liveDbCache.keys()]) if (!seen.has(name)) liveDbCache.delete(name);
+    bundle.indexedDB.sort((a, b) => a.name < b.name ? -1 : 1);
+    return bundle;
+}
+async function liveSaveNow(reason) {
+    if (typeof cloudUser === "undefined" || !cloudUser || liveState.busy || cloudBusy || liveSlowDevice()) return false;
+    if (typeof HOME_SERVER === "undefined" || Date.now() < homeSavesDownUntil) return false;
+    if (typeof gameLoad !== "undefined" && gameLoad.phase !== "idle" && reason !== "hidden") return false;   // a game is loading
+    // Every third time, ask the open game to write what it keeps in memory (Unity)
+    if (reason !== "hidden" && ++liveState.ticks % 3 === 0 && typeof syncOpenGameFiles === "function") {
+        try { await syncOpenGameFiles(1000); } catch {}
+    }
+    if (!liveDirty.ls && !liveDirty.dbs.size) { liveState.okAt = Date.now(); return true; }
+    liveState.busy = true;
+    const dirty = liveDirty;
+    liveDirty = { ls: false, dbs: new Set() };
+    // Reading every database (the first time, or a new game page) is as heavy
+    // as a normal cloud save, so it doesn't count toward "too slow"
+    const fullRead = dirty.dbs.has("*") || !liveDbCache.size;
+    let jank = 0, obs = null;
+    try {
+        if (reason !== "hidden") await liveIdle();
+        try {
+            // Only the site's own long tasks count, not the game's (it runs in a frame)
+            obs = new PerformanceObserver(list => { for (const e of list.getEntries()) if (e.name === "self") jank += e.duration; });
+            obs.observe({ type: "longtask", buffered: false });
+        } catch { obs = null; }
+        const started = performance.now();
+        const bundle = await liveCollect(dirty);
+        const { packed, blobs, total } = await prepareCloudSave(bundle);
+        if (packed.length > CLOUD.maxChars) return false;
+        const hash = (await sha256Hex(packed)).slice(0, 40);
+        if (obs) obs.disconnect();
+        const slow = !fullRead && (obs ? jank > LIVE_SAVE.jankMs : performance.now() - started > 2500);
+        if (slow && ++liveState.slowHits >= 2) {
+            try { localStorage.setItem(LIVE_SAVE.slowKey, String(Date.now())); } catch {}
+            setCloudStatus("Live Save is off on this computer (saving made it stutter), so it cloud saves every 2 minutes instead.");
+            return false;
+        }
+        if (!slow) liveState.slowHits = 0;
+        if (hash === liveState.hash) { liveState.okAt = Date.now(); return true; }
+        // New game data goes to the server once (it's stored by its contents)
+        for (const b of blobs) {
+            if (liveState.have.has(b.id)) continue;
+            const p = blobPackCache.get(b.id);
+            if (!p) throw new Error("game data changed");
+            for (let j = 0; j < b.n; j++) {
+                const res = await homeSaveFetch("blobs/" + encodeURIComponent(`${b.id}_${j}`), { method: "PUT", body: p.slice(j * CLOUD.chunkChars, (j + 1) * CLOUD.chunkChars), headers: { "Content-Type": "text/plain" } });
+                if (!res.ok) throw new Error("server said " + res.status);
+            }
+            liveState.have.add(b.id);
+        }
+        const body = JSON.stringify({ main: packed, blobs: blobs.map(b => ({ id: b.id, n: b.n })), hash, sum: progressSummary(), size: total,
+            sid: typeof window.gnSessionId === "function" ? window.gnSessionId() : "", at: Date.now() });
+        const res = await homeSaveFetch("live", { method: "PUT", body, headers: { "Content-Type": "text/plain" } });
+        if (!res.ok) throw new Error("server said " + res.status);
+        liveState.hash = hash;
+        liveState.why = "";
+        liveState.savedAt = liveState.okAt = Date.now();
+        try { localStorage.setItem(LIVE_SAVE.hashKey, hash); } catch {}
+        setCloudStatus("Live Save — saved " + new Date().toLocaleTimeString());
+        if (typeof renderSaveChip === "function") renderSaveChip();
+        return true;
+    } catch (e) {
+        // Try again next time, reading everything
+        liveDirty.ls = true; liveDirty.dbs.add("*");
+        console.info("Live Save didn't go through:", e.message || e);
+        liveState.why = "Didn't go through (" + (e.message || e) + "), trying again in 20 seconds";
+        return false;
+    } finally {
+        if (obs) try { obs.disconnect(); } catch {}
+        liveState.busy = false;
+    }
+}
+setInterval(() => { if (!document.hidden) liveSaveNow("tick"); }, LIVE_SAVE.everyMs);
+// Keep the game bar's "Live saved 12s ago" ticking
+setInterval(() => { if (!document.hidden && typeof renderSaveChip === "function" && liveSaveActive()) renderSaveChip(); }, 5000);
+// Signing in: what the server already has doesn't need sending again
+window.addEventListener("load", () => setTimeout(() => {
+    try { liveState.hash = localStorage.getItem(LIVE_SAVE.hashKey) || ""; } catch {}
+}, 0));
+
+</script>
 <script>/* js/status.js */
 // ═════════════════════════════════════════════════════════════════════════════
 // Site status light in the bottom-left corner. It checks the parts of the site
@@ -19572,7 +20191,7 @@ const STATUS_HEADLINES = {
     degraded: "Running with some issues",
     down: "Major outage"
 };
-const MIRROR_NAMES = { jsdelivr: "jsDelivr", github: "GitHub", githack: "githack", fastly: "jsDelivr (Fastly)", gcore: "jsDelivr (G-Core)", testingcf: "jsDelivr (Cloudflare)" };
+const MIRROR_NAMES = { jsdelivr: "jsDelivr", github: "GitHub", githack: "githack", fastly: "jsDelivr (Fastly)", gcore: "jsDelivr (G-Core)", testingcf: "jsDelivr (Cloudflare)", home: "GN 2.0 Server" };
 
 function getShowSiteStatus() { try { return localStorage.getItem(SHOW_STATUS_KEY) !== "false"; } catch { return true; } }
 function setShowSiteStatus(on) {
@@ -19654,6 +20273,8 @@ function collectStatusChecks() {
     if (typeof fbPaceSummary === "function" && typeof FIREBASE_CONFIG !== "undefined" && FIREBASE_CONFIG) {
         checks.push({ name: "Database use", ...fbPaceSummary() });
     }
+
+    if (typeof homeServerCheck === "function") checks.push({ name: "GN 2.0 Server", ...homeServerCheck() });
 
     checks.push({ name: "Game protection", level: "ok", detail: typeof ubzoneState !== "undefined" && ubzoneState !== "failed"
         ? "Library and the UBZone, Selenite and 55GMS games locked to their checked, clean versions"
