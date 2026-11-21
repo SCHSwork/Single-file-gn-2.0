@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ dfb02746ce. -->
+<!-- GN 2.0 single-file site. Fill in GN_CONFIG below; see SETUP.md. Built from GN 2.0 @ 4c6348eeaf. -->
 <html lang="en">
     <head>
 <script>
@@ -4227,8 +4227,35 @@ function errorFlushSoon(ms = 3000) {
     clearTimeout(errorFlushTimer);
     errorFlushTimer = setTimeout(errorFlush, ms);
 }
+// The GN 2.0 Server adds up the same error from many players and writes it to
+// Firestore as one entry every 10 minutes, so most reports cost this browser
+// no Firebase write at all. If the server can't be reached, reports go
+// straight to Firestore like before.
+async function errorFlushToServer() {
+    let q = errorReadQueue();
+    if (!q.length) return true;
+    const room = ERROR_LOG.perDay - errorSentToday();
+    if (room <= 0) { errorWriteQueue([]); return true; }
+    q = q.slice(0, Math.min(room, 10));
+    try {
+        const base = typeof HOME_SERVER !== "undefined" ? HOME_SERVER : "https://data.learnresearch.org";
+        const ctrl = new AbortController(), t = setTimeout(() => ctrl.abort(), 8000);
+        const res = await fetch(base + "/api/errors", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(q), signal: ctrl.signal, keepalive: true });
+        clearTimeout(t);
+        if (!res.ok) return false;
+    } catch { return false; }
+    const sent = new Set(q.map(e => e.sig));
+    for (let i = 0; i < sent.size; i++) errorNoteSent();
+    errorWriteQueue(errorReadQueue().filter(e => !sent.has(e.sig)));
+    return !errorReadQueue().length;
+}
 async function errorFlush() {
     if (errorFlushing) return;
+    errorFlushing = true;
+    let viaServer = false;
+    try { viaServer = await errorFlushToServer(); } catch {}
+    errorFlushing = false;
+    if (viaServer) return;
     // Firebase loads after the page; try again later if it isn't ready
     if (typeof cloudDb === "undefined" || !cloudDb || typeof firebase === "undefined") { errorFlushSoon(10000); return; }
     if (typeof fbPaused === "function" && fbPaused()) return;
@@ -8914,6 +8941,89 @@ async function ownerOffsiteStatus() {
     if (o.lastOk) { el.style.color = "var(--success, #22c55e)"; el.textContent = `Working. Last copied ${when(o.lastOk)} (${Math.round(o.bytes / 1e6)} MB, ${o.kept || 1} kept in R2).`; return; }
     el.textContent = o.configured ? "Keys saved. The first copy goes up within 10 minutes." : "Not set up yet: backups only exist on your PC.";
 }
+// ── Minecraft hosting on the GN 2.0 server (owner only) ─────────────────────
+async function ownerMinecraft() {
+    const el = document.getElementById("owner-mc");
+    if (!el) return;
+    if (typeof cloudUser === "undefined" || !cloudUser) { el.textContent = "Sign in to see this."; return; }
+    let d = null, err = "";
+    try {
+        const r = await fetch(HOME_SERVER + "/api/owner/minecraft", { headers: { Authorization: "Bearer " + await cloudUser.getIdToken() }, cache: "no-store" });
+        if (r.ok) d = await r.json(); else err = r.status === 404 ? "The server hasn't updated yet. Try again in a few minutes." : "The server said " + r.status;
+    } catch { err = "The GN 2.0 Server can't be reached right now."; }
+    if (!document.getElementById("owner-mc")) return;
+    if (!d) { el.textContent = err; return; }
+    const s = d.status || {}, a = s.amp;
+    const row = (label, html) => `<div style="display:flex;gap:0.5rem;align-items:center;margin:0.25rem 0;flex-wrap:wrap;"><b style="min-width:7rem;">${label}</b><span>${html}</span></div>`;
+    const copy = v => `<code style="user-select:all;">${escapeHtml(v)}</code> <button class="settings-button" type="button" style="min-width:0;padding:0.2rem 0.6rem;font-size:12px;" onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent).then(()=>notify('Copied',{type:'success'}))">Copy</button>`;
+    el.innerHTML =
+        row("Setup", !s.step ? "Not started yet (starts within about 10 minutes of an update)" : s.step === "done" ? "Finished" : "Running…") +
+        row("AMP panel", d.ampUp ? `<span style="color:var(--success,#22c55e)">Running</span> · <a href="https://amp.learnresearch.org" target="_blank" rel="noopener">amp.learnresearch.org</a>` : "Not running yet") +
+        (a ? row("AMP login", copy(a.user) + " " + copy(a.pass)) : "") +
+        (d.geyser && (d.geyser.appliedAt || d.geyser.error) ? row("Bedrock setup", d.geyser.error ? `<span style="color:var(--danger,#ef4444)">${escapeHtml(d.geyser.error)}</span>` : `<span style="color:var(--success,#22c55e)">Geyser set up</span> · restart GN Craft in AMP if you haven't since`) : "") +
+        row("playit", d.playit === "active" ? `<span style="color:var(--success,#22c55e)">Running</span>` : escapeHtml(d.playit || "not installed")) +
+        (s.playitClaim ? row("playit link", `<a href="${escapeHtml(s.playitClaim)}" target="_blank" rel="noopener">Claim this server on playit.gg</a>`) : "") +
+        `<details style="margin-top:0.5rem;"><summary>Setup log</summary><pre style="white-space:pre-wrap;font-size:11px;max-height:16rem;overflow:auto;">${escapeHtml((d.log || []).join("\n"))}</pre></details>`;
+}
+
+async function ownerSavePlayitNxs() {
+    const el = document.getElementById("owner-playit-nxs"), cfg = (el && el.value || "").trim();
+    if (!/^\s*bedrock\s*:/m.test(cfg) || !/nxs\s*:/.test(cfg)) return notify("Paste the whole block from playit's Configuration help (it starts with bedrock:).", { type: "error" });
+    if (/•/.test(cfg)) return notify("The token is hidden in what you pasted. Use playit's Copy button (or Show token first).", { type: "error" });
+    if (typeof cloudDb === "undefined" || !cloudDb || !cloudUser) return notify("Sign in to your account first.", { type: "error" });
+    try {
+        await cloudDb.collection("serverSecrets").doc("playit-nxs").set({ config: cfg.slice(0, 6000), at: firebase.firestore.FieldValue.serverTimestamp() });
+        el.value = "";
+        notify("Sent. The server sets up Geyser within a minute; then restart GN Craft in AMP.", { type: "success" });
+        setTimeout(ownerMinecraft, 8000);
+    } catch (e) { notify("Couldn't send it: " + (e.message || e), { type: "error" }); }
+}
+
+// ── GN 2.0 Server maintenance (Firestore siteStatus/maintenance) ────────────
+async function ownerMaintStatus() {
+    const el = document.getElementById("owner-maint-status");
+    if (!el || typeof cloudDb === "undefined" || !cloudDb) { if (el) el.textContent = "Sign in to see or set maintenance."; return; }
+    try {
+        const d = await cloudDb.collection("siteStatus").doc("maintenance").get();
+        if (!document.getElementById("owner-maint-status")) return;
+        const m = d.exists ? d.data() : null, now = Date.now();
+        const start = m && m.start ? m.start.toMillis() : 0, until = m && m.until ? m.until.toMillis() : 0;
+        const t = ms => new Date(ms).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+        el.style.color = "";
+        if (!m || until < now) el.textContent = "No maintenance planned.";
+        else if (start > now) el.textContent = `Scheduled: ${t(start)} until ${t(until)}.`;
+        else { el.style.color = "var(--warning, #f59e0b)"; el.textContent = `On now, until ${t(until)} (${Math.max(1, Math.ceil((until - now) / 60000))} min left).`; }
+    } catch (e) { el.textContent = "Couldn't check: " + (e.message || e); }
+}
+async function ownerSetMaint() {
+    if (typeof cloudDb === "undefined" || !cloudDb || !cloudUser) return notify("Sign in to your account first.", { type: "error" });
+    const mins = Math.round(Number(document.getElementById("owner-maint-mins").value));
+    if (!(mins >= 1 && mins <= 1440)) return notify("Pick between 1 and 1,440 minutes.", { type: "error" });
+    let start = Date.now();
+    if (document.getElementById("owner-maint-when").value === "later") {
+        start = new Date(document.getElementById("owner-maint-at").value).getTime();
+        if (!isFinite(start)) return notify("Pick when the maintenance starts.", { type: "error" });
+        if (start < Date.now()) start = Date.now();
+    }
+    const TS = firebase.firestore.Timestamp;
+    try {
+        await cloudDb.collection("siteStatus").doc("maintenance").set({
+            start: TS.fromMillis(start), until: TS.fromMillis(start + mins * 60000),
+            note: (document.getElementById("owner-maint-note").value || "").trim().slice(0, 200),
+            at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        notify(start <= Date.now() + 60000 ? `Maintenance is on for ${mins} min. The status pages show it within a minute.` : "Maintenance scheduled.", { type: "success" });
+        ownerMaintStatus();
+    } catch (e) { notify("Couldn't set maintenance: " + (e.message || e), { type: "error" }); }
+}
+async function ownerEndMaint() {
+    if (typeof cloudDb === "undefined" || !cloudDb || !cloudUser) return notify("Sign in to your account first.", { type: "error" });
+    try {
+        await cloudDb.collection("siteStatus").doc("maintenance").delete();
+        notify("Maintenance ended.", { type: "success" });
+        ownerMaintStatus();
+    } catch (e) { notify("Couldn't end maintenance: " + (e.message || e), { type: "error" }); }
+}
 async function ownerSaveOffsite() {
     const v = id => (document.getElementById(id)?.value || "").trim();
     const data = { accountId: v("owner-r2-account").toLowerCase(), bucket: v("owner-r2-bucket").toLowerCase(), accessKeyId: v("owner-r2-key"), secretAccessKey: v("owner-r2-secret") };
@@ -9116,6 +9226,34 @@ function renderOwnerPanel() {
     </div>
 
     <div class="settings-section">
+        <h4>Minecraft Server</h4>
+        <p style="margin:0 0 0.5rem;font-size:13px;color:var(--text-muted);">AMP, Java and playit are installed on the GN 2.0 server by its auto-updater. Only your account can see this.</p>
+        <div id="owner-mc" style="font-size:13px;">Checking…</div>
+        <button class="settings-button" type="button" style="margin-top:0.5rem;" onclick="ownerMinecraft()">Refresh</button>
+        <p style="margin:1rem 0 0.35rem;font-size:13px;"><b>Bedrock (NetherNet) setup:</b> on playit.gg open the Bedrock tunnel → Configuration help → Geyser → <b>Copy</b>, then paste it here. It has a private token: it goes straight to the server and nobody can read it back.</p>
+        <textarea id="owner-playit-nxs" rows="6" placeholder="bedrock:&#10;  address: 0.0.0.0&#10;  …" style="width:100%;padding:0.5rem 0.75rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:monospace;"></textarea>
+        <button class="settings-button" type="button" style="margin-top:0.5rem;" onclick="ownerSavePlayitNxs()">Send to the server</button>
+    </div>
+
+    <div class="settings-section">
+        <h4>GN 2.0 Server Maintenance</h4>
+        <p style="margin:0 0 0.5rem;font-size:13px;color:var(--text-muted);">Planning to restart or work on the server? While maintenance is on, the status pages show it in amber as "Down for maintenance, back in about X min" instead of down, and it doesn't count as an outage.</p>
+        <p id="owner-maint-status" style="margin:0 0 0.75rem;font-size:13px;">Checking…</p>
+        <label style="font-size:13px;display:block;margin-bottom:0.25rem;">Starts</label>
+        <select id="owner-maint-when" style="width:100%;padding:0.5rem 0.75rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-secondary);color:var(--text);font-size:14px;margin-bottom:0.5rem;font-family:inherit;" onchange="document.getElementById('owner-maint-at').style.display = this.value === 'later' ? '' : 'none'">
+            <option value="now">Now</option><option value="later">Later…</option>
+        </select>
+        <input id="owner-maint-at" type="datetime-local" style="display:none;width:100%;padding:0.5rem 0.75rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-secondary);color:var(--text);font-size:14px;margin-bottom:0.5rem;font-family:inherit;">
+        <label style="font-size:13px;display:block;margin-bottom:0.25rem;">How long (minutes)</label>
+        <input id="owner-maint-mins" type="number" min="1" max="1440" value="15" style="width:100%;padding:0.5rem 0.75rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-secondary);color:var(--text);font-size:14px;margin-bottom:0.5rem;font-family:inherit;">
+        <input id="owner-maint-note" maxlength="200" placeholder="Note for players (optional), e.g. Restarting for an update" style="width:100%;padding:0.5rem 0.75rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-secondary);color:var(--text);font-size:14px;margin-bottom:0.5rem;font-family:inherit;">
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button class="settings-button" type="button" style="min-width:0;flex:1;" onclick="ownerSetMaint()">Start / schedule</button>
+            <button class="settings-button" type="button" style="min-width:0;flex:1;background:var(--surface-hover);" onclick="ownerEndMaint()">End maintenance</button>
+        </div>
+    </div>
+
+    <div class="settings-section">
         <h4>Off-PC Save Backup</h4>
         <p style="margin:0 0 0.5rem;font-size:13px;color:var(--text-muted);">The GN 2.0 Server makes a backup of every save each night. With a Cloudflare R2 bucket set up, that backup is also copied off your PC (the newest 7 are kept), so a dead drive doesn't lose anyone's progress. The keys go straight to the server: nobody can read them back from here, not even you.</p>
         <p id="owner-offsite-status" style="margin:0 0 0.75rem;font-size:13px;">Checking…</p>
@@ -9140,6 +9278,8 @@ function renderOwnerPanel() {
     `;
 
     ownerOffsiteStatus();
+    ownerMinecraft();
+    ownerMaintStatus();
     const ownerGameList = document.getElementById("owner-game-list");
     const disabledIds = getDisabledZoneIds();
     zones.slice().sort((a, b) => a.name.localeCompare(b.name)).forEach(zone => {
@@ -19986,6 +20126,26 @@ function sendHomePlay(id) {
         else fetch(HOME_SERVER + "/api/play", { method: "POST", body, keepalive: true, mode: "no-cors" }).catch(() => {});
     } catch {}
 }
+
+// ── Which game sources work here (the server's "school block map") ─────────
+// Once a day, a few minutes into a visit, this browser tells the server which
+// game sources answered and which were blocked or down. Only the source names
+// are sent (and whether it's a Chromebook), nothing about the player.
+const HOME_REACH_KEY = "gnmath-reach-day";
+function sendReachReport() {
+    try {
+        const day = new Date().toISOString().slice(0, 10);
+        if (localStorage.getItem(HOME_REACH_KEY) === day) return;
+        const ok = typeof mirrorOkAt !== "undefined" ? Object.keys(mirrorOkAt) : [];
+        const down = typeof mirrorDown !== "undefined" ? [...mirrorDown].filter(s => !ok.includes(s)) : [];
+        if (!ok.length && !down.length) return;   // no game played yet: nothing to say
+        const body = new Blob([JSON.stringify({ ok, down, chromebook: /CrOS/.test(navigator.userAgent) })], { type: "text/plain" });
+        const sent = navigator.sendBeacon ? navigator.sendBeacon(HOME_SERVER + "/api/reach", body) : false;
+        if (sent) localStorage.setItem(HOME_REACH_KEY, day);
+    } catch {}
+}
+setTimeout(sendReachReport, 3 * 60 * 1000);
+setInterval(sendReachReport, 20 * 60 * 1000);
 
 checkHomeServer();
 setInterval(checkHomeServer, 5 * 60 * 1000);
